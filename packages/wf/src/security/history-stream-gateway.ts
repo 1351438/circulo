@@ -4,7 +4,7 @@ import type {
   WorkflowHistoryEventStreamGateway,
   WorkflowHistoryStreamOptions,
 } from "../models";
-import { WorkflowAccessTokenSigner } from "./access-token";
+import type { WorkflowAccessTokenSigner } from "./access-token";
 import { createBufferedAsyncStream } from "./buffered-stream";
 
 export class SecureWorkflowHistoryStreamGateway implements WorkflowHistoryEventStreamGateway {

@@ -1,6 +1,6 @@
 import { Slot } from "@/lib/slot";
 import { cn } from "@/lib/utils";
-import { ComponentProps, isValidElement } from "react";
+import { type ComponentProps, isValidElement } from "react";
 import { Spinner } from "./ui/spinner";
 
 type Props = ComponentProps<"div"> & ComponentProps<typeof Spinner>;

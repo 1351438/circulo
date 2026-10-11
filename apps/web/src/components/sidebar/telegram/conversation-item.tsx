@@ -1,6 +1,6 @@
 "use client";
 
-import { Conversation } from "@/components/sidebar/telegram/types";
+import type { Conversation } from "@/components/sidebar/telegram/types";
 import { SidebarMenuAction, SidebarMenuButton } from "@/components/ui/sidebar";
 import { Check, ImageIcon, X } from "lucide-react";
 import { ConversationAvatar } from "./conversation-avatar";

@@ -6,7 +6,7 @@ import {
   ThumbUpIcon,
 } from "@/components/icons/icons";
 import type { ChatMessage } from "@/lib/types";
-import { Vote } from "@circulo-ai/db";
+import type { Vote } from "@circulo-ai/db";
 import equal from "fast-deep-equal";
 import { memo } from "react";
 import { toast } from "sonner";

@@ -1,11 +1,11 @@
-import { type Message } from "@/db";
+import type { Message } from "@/db";
 import {
   orchestrationFallbackModel,
   withModelFallback,
 } from "@/lib/ai/providers";
-import { type ChatMessage } from "@/lib/types";
+import type { ChatMessage } from "@/lib/types";
 import { getTextFromMessages } from "@/lib/utils";
-import { type OrchestrationInput } from "@/workflows/orchestrate/types";
+import type { OrchestrationInput } from "@/workflows/orchestrate/types";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import type { OrchestrationAgentProfile } from "../orchestration-agent-profile";

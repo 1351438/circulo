@@ -8,7 +8,7 @@ import { consumeQuota, reserveQuota } from "@/lib/billing/quota";
 import { createRouter } from "@/lib/create-app";
 import { hasPermission, isMemberOf } from "@/lib/permissions";
 import { isSafeMessageUrl } from "@/lib/security/message-url";
-import { type ChatMessage } from "@/lib/types";
+import type { ChatMessage } from "@/lib/types";
 import {
   convertToUIMessages,
   getTextFromMessage,

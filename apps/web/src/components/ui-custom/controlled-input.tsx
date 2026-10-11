@@ -3,22 +3,22 @@
 import { camelToTitle } from "@/lib/camel-to-title";
 import { convertPersianToEnglishNumbers } from "@/lib/convert-persian-to-english-numbers";
 import {
-  ChangeEvent,
-  ChangeEventHandler,
-  ComponentProps,
-  FC,
-  FocusEventHandler,
-  ReactNode,
-  Ref,
+  type ChangeEvent,
+  type ChangeEventHandler,
+  type ComponentProps,
+  type FC,
+  type FocusEventHandler,
+  type ReactNode,
+  type Ref,
   useCallback,
   useId,
   useMemo,
 } from "react";
 import {
   Controller,
-  ControllerRenderProps,
-  FieldValues,
-  Path,
+  type ControllerRenderProps,
+  type FieldValues,
+  type Path,
   useFormContext,
 } from "react-hook-form";
 import {

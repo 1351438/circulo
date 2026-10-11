@@ -102,6 +102,10 @@ export async function executeInE2B(
   } finally {
     try {
       await sandbox.kill();
-    } catch {}
+    } catch (error) {
+      // Cleanup is best-effort, but a sandbox that outlives the request keeps
+      // billing and quota, so the failure has to be visible.
+      logger.warn("Failed to kill E2B sandbox", { sandboxId, error });
+    }
   }
 }

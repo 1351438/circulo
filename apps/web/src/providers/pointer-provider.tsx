@@ -1,10 +1,10 @@
 "use client";
 
 import {
-  ComponentProps,
+  type ComponentProps,
   createContext,
-  Dispatch,
-  SetStateAction,
+  type Dispatch,
+  type SetStateAction,
   useContext,
   useEffect,
   useState,

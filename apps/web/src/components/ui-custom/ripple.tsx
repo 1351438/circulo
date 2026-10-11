@@ -1,7 +1,7 @@
 import { Slot } from "@/lib/slot";
 import { cn } from "@/lib/utils";
 import { BaseRipple } from "@base-ripple/react";
-import { ComponentProps, ElementType } from "react";
+import type { ComponentProps, ElementType } from "react";
 
 const DEFAULT_ELEMENT_TYPE = "button" as const;
 

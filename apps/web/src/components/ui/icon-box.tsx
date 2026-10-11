@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
-import { Icon } from "@/types/icon";
-import { ComponentProps } from "react";
+import type { Icon } from "@/types/icon";
+import type { ComponentProps } from "react";
 
 interface IconBoxProps extends ComponentProps<"div"> {
   icon: Icon;

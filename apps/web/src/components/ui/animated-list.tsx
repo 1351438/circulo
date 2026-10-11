@@ -2,8 +2,8 @@
 
 import { Slot } from "@/lib/slot";
 import { cn } from "@/lib/utils";
-import { AnimatePresence, motion, Transition } from "motion/react";
-import { ComponentProps, forwardRef, ReactNode } from "react";
+import { AnimatePresence, motion, type Transition } from "motion/react";
+import { type ComponentProps, forwardRef, type ReactNode } from "react";
 
 const TRANSITION = {
   duration: 0.3,

@@ -1,6 +1,6 @@
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import { ComponentProps } from "react";
+import type { ComponentProps } from "react";
 
 interface PageSpinnerProps extends Omit<ComponentProps<"div">, "children"> {}
 

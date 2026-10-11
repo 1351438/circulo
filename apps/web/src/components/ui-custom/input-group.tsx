@@ -1,6 +1,6 @@
 import { InputGroup } from "@/components/ui/input-group";
 import { cn } from "@/lib/utils";
-import { ComponentProps } from "react";
+import type { ComponentProps } from "react";
 import { TextInput } from "./text-input";
 
 interface CustomInputGroupProps extends ComponentProps<typeof InputGroup> {}

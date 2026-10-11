@@ -1,11 +1,11 @@
 "use client";
 
-import { Tag, tags } from "@/consts/faq-section";
+import { type Tag, tags } from "@/consts/faq-section";
 import {
-  ComponentProps,
+  type ComponentProps,
   createContext,
-  Dispatch,
-  SetStateAction,
+  type Dispatch,
+  type SetStateAction,
   useContext,
   useState,
 } from "react";

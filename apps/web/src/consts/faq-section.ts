@@ -1,4 +1,4 @@
-import { Icon } from "@/types/icon";
+import type { Icon } from "@/types/icon";
 import {
   Code,
   Cpu,

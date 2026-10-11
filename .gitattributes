@@ -1,0 +1,16 @@
+# Normalize line endings so Prettier (endOfLine: "lf") and the formatting gate
+# agree across platforms. Without this, a Windows checkout with core.autocrlf
+# rewrites every file to CRLF and `bun run format:check` reports the whole
+# repository as unformatted.
+* text=auto eol=lf
+
+# Generated / binary artefacts
+bun.lock linguist-generated=true
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { FieldValues, UseFormReturn } from "react-hook-form";
+import type { FieldValues, UseFormReturn } from "react-hook-form";
 
 export function useNormalizeEmptyFields<
   TFieldValues extends FieldValues = FieldValues,

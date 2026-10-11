@@ -9,7 +9,6 @@ import {
   type HTMLAttributes,
   useContext,
   useEffect,
-  useRef,
   useState,
 } from "react";
 import { type BundledLanguage, codeToHtml, type ShikiTransformer } from "shiki";
@@ -82,19 +81,28 @@ export const CodeBlock = ({
 }: CodeBlockProps) => {
   const [html, setHtml] = useState<string>("");
   const [darkHtml, setDarkHtml] = useState<string>("");
-  const mounted = useRef(false);
 
   useEffect(() => {
-    highlightCode(code, language, showLineNumbers).then(([light, dark]) => {
-      if (!mounted.current) {
+    // Guard against a superseded highlight run resolving last and painting
+    // stale output, and against setting state after unmount.
+    let cancelled = false;
+
+    highlightCode(code, language, showLineNumbers)
+      .then(([light, dark]) => {
+        if (cancelled) return;
         setHtml(light);
         setDarkHtml(dark);
-        mounted.current = true;
-      }
-    });
+      })
+      .catch(() => {
+        // An unsupported language leaves the block unhighlighted rather than
+        // rejecting unhandled.
+        if (cancelled) return;
+        setHtml("");
+        setDarkHtml("");
+      });
 
     return () => {
-      mounted.current = false;
+      cancelled = true;
     };
   }, [code, language, showLineNumbers]);
 

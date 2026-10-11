@@ -1,7 +1,8 @@
 "use client";
 
 import { Logo } from "@/components/logo";
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 
 const agents = [
   {

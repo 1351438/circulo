@@ -1,4 +1,4 @@
-import { Ref, RefCallback, RefObject, useRef } from "react";
+import { type Ref, type RefCallback, type RefObject, useRef } from "react";
 
 type PossibleRef<T> = Ref<T> | null | undefined;
 type MergedRef<T> = RefCallback<T> & RefObject<T | null>;

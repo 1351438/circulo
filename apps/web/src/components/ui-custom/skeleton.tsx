@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { ComponentProps } from "react";
+import type { ComponentProps } from "react";
 import { Skeleton } from "../ui/skeleton";
 
 interface CustomSkeletonProps extends ComponentProps<"div"> {}

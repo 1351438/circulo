@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { AutumnProvider } from "autumn-js/react";
 import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Toaster } from "sonner";
 import "./globals.css";
 

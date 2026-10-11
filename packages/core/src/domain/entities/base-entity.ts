@@ -1,4 +1,4 @@
-import { Identifier } from "../value-objects/identifier";
+import type { Identifier } from "../value-objects/identifier";
 
 export type EntityProps = {
   id: Identifier;

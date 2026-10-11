@@ -48,7 +48,7 @@ import {
   loadDurableAgentProgressDecisions,
   persistDurableAgentProgressDecision,
 } from "./steps/evaluate-agent-progress-step";
-import { type OrchestrationInput } from "./types";
+import type { OrchestrationInput } from "./types";
 
 export const ORCHESTRATION_WORKFLOW_NAME = "chat-orchestration";
 
@@ -459,7 +459,7 @@ export function createOrchestrationWorkflow(): OrchestrationWorkflowDefinition {
           return complete(state);
         }
 
-        let agentResults = [...state.agentResults];
+        const agentResults = [...state.agentResults];
         let pendingApprovalId = state.pendingApprovalId;
         let pendingHumanHandoffId = state.pendingHumanHandoffId;
         let processed = 0;

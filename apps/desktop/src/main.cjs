@@ -5,6 +5,7 @@ const {
   ipcMain,
   safeStorage,
   session,
+  shell,
 } = require("electron");
 const crypto = require("node:crypto");
 const fs = require("node:fs");
@@ -22,6 +23,20 @@ const WEB_PORT = Number(process.env.CIRCULO_DESKTOP_WEB_PORT || 3310);
 const apiUrl = `http://127.0.0.1:${API_PORT}`;
 const webUrl =
   process.env.CIRCULO_DESKTOP_WEB_URL || `http://127.0.0.1:${WEB_PORT}`;
+// The desktop shell only ever renders the runtime it starts itself. Anything
+// else is treated as an external link.
+function isLocalRuntimeUrl(url) {
+  try {
+    const target = new URL(url);
+    return (
+      target.origin === new URL(webUrl).origin ||
+      target.origin === new URL(apiUrl).origin
+    );
+  } catch {
+    return false;
+  }
+}
+
 const children = [];
 let mainWindow;
 let runtimeStatus = "starting";
@@ -168,7 +183,6 @@ function startLocalRuntime() {
     SERVER_API_URL: apiUrl,
     NEXT_PUBLIC_APP_URL: webUrl,
     NEXT_PUBLIC_BILLING_ENABLED: "false",
-    NEXT_PUBLIC_CIRCULO_RUNTIME_KIND: "desktop",
     ...secrets,
   };
 
@@ -319,10 +333,23 @@ function createWindow() {
       }
     },
   );
+  // Never open a third-party page inside the Electron window: a child window
+  // inherits this window's preload, which would expose the circuloDesktop IPC
+  // bridge (including installUpdate) to that origin. External links go to the
+  // user's own browser instead.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith("https://")) return { action: "allow" };
+    if (url.startsWith("https://")) void shell.openExternal(url);
     return { action: "deny" };
   });
+
+  // Keep the main window pinned to the bundled local runtime for the same
+  // reason: an in-place navigation would carry the preload bridge with it.
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    if (isLocalRuntimeUrl(url)) return;
+    event.preventDefault();
+    if (url.startsWith("https://")) void shell.openExternal(url);
+  });
+
   return mainWindow.loadURL(webUrl);
 }
 

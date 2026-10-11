@@ -1,4 +1,4 @@
-import { AggregateRoot, Identifier, ValidationError } from "@circulo-ai/core";
+import { AggregateRoot, type Identifier, ValidationError } from "@circulo-ai/core";
 
 export type ArtifactProps = {
   id: Identifier;

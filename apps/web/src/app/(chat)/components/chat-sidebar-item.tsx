@@ -27,7 +27,7 @@ import { Pin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { forwardRef, useCallback, useState } from "react";
 import { toast } from "sonner";
-import { Arguments, Key, useSWRConfig } from "swr";
+import { type Arguments, type Key, useSWRConfig } from "swr";
 
 const CHAT_AVATAR_GRADIENTS = [
   "from-indigo-500 via-violet-500 to-fuchsia-500",

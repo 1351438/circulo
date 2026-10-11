@@ -1,6 +1,6 @@
 "use client";
 
-import { ArtifactKind, UIArtifact } from "@/components/artifacts/artifact";
+import type { ArtifactKind, UIArtifact } from "@/components/artifacts/artifact";
 import {
   FileIcon,
   FullscreenIcon,

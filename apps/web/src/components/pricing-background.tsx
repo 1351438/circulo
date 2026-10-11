@@ -1,6 +1,6 @@
 "use client";
 
-import { createBorderNode, Step } from "@/lib/border-walk";
+import { createBorderNode, type Step } from "@/lib/border-walk";
 import { usePointer } from "@/providers/pointer-provider";
 import { useCallback, useEffect, useId } from "react";
 

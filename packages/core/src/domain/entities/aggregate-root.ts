@@ -1,5 +1,5 @@
 import type { DomainEvent } from "../events/domain-event";
-import { Identifier } from "../value-objects/identifier";
+import type { Identifier } from "../value-objects/identifier";
 import { Entity, type EntityProps } from "./base-entity";
 
 export abstract class AggregateRoot<

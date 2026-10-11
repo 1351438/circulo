@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { ComponentProps, useId, useMemo } from "react";
+import { type ComponentProps, useId, useMemo } from "react";
 import { EnhancedLinkClient } from "./enhanced-link-client";
 import { Button } from "./ui/button";
 

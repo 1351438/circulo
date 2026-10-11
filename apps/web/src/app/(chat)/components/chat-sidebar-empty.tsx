@@ -16,7 +16,7 @@ import {
 import { SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import { ComponentProps } from "react";
+import type { ComponentProps } from "react";
 
 interface ChatSidebarEmptyProps extends ComponentProps<"div"> {
   archived?: boolean;

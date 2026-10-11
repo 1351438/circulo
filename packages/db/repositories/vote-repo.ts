@@ -87,7 +87,7 @@ export function createVoteRepository(database: DbInstance) {
       messageId: string,
       type: "up" | "down",
     ) {
-      return type == "up"
+      return type === "up"
         ? this.upvote(userId, chatId, messageId)
         : this.downvote(userId, chatId, messageId);
     },

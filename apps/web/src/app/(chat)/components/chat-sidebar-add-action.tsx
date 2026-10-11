@@ -13,7 +13,7 @@ import {
 import { useSidebar } from "@/components/ui/sidebar";
 import { useChatHistoryStore } from "@/stores/use-chat-history-store";
 import { Bot, MessagesSquare, Pencil, Users } from "lucide-react";
-import { ComponentProps, useState } from "react";
+import { type ComponentProps, useState } from "react";
 
 interface ChatSidebarAddActionProps extends Omit<
   ComponentProps<typeof DropdownMenu>,

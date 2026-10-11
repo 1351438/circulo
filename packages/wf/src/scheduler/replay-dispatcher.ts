@@ -1,4 +1,4 @@
-import { ReplayWorkflowRunner } from "../durable/replay-workflow-runner";
+import type { ReplayWorkflowRunner } from "../durable/replay-workflow-runner";
 import type {
   ReplayWorkflowDefinition,
   ReplayWorkflowRunnerOptions,
@@ -6,11 +6,8 @@ import type {
   ScheduleRecord,
 } from "../models";
 
-export interface ReplayScheduleDefinitionResolver {
-  (
-    workflowName: string,
-  ): ReplayWorkflowDefinition<unknown, unknown> | undefined;
-}
+export type ReplayScheduleDefinitionResolver = (
+    workflowName: string,) => ReplayWorkflowDefinition<unknown, unknown> | undefined
 
 export interface ReplayScheduleDispatcherOptions {
   runner: ReplayWorkflowRunner;

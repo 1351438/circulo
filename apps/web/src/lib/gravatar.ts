@@ -1,4 +1,4 @@
-import { GravatarOptions } from "@/types/gravatar";
+import type { GravatarOptions } from "@/types/gravatar";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex } from "@noble/hashes/utils.js";
 

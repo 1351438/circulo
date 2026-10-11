@@ -1,6 +1,6 @@
 "use client";
 
-import { Conversation } from "@/components/sidebar/telegram/types";
+import type { Conversation } from "@/components/sidebar/telegram/types";
 import { SidebarMenuButton } from "@/components/ui/sidebar";
 import { ConversationAvatar } from "./conversation-avatar";
 

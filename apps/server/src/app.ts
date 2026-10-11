@@ -63,12 +63,20 @@ app.use("*", requestId());
 app.use("*", auditRequest);
 app.use("*", securityHeaders);
 app.use(prettyJSON());
-const allowedOrigins = [
-  env.NEXT_PUBLIC_APP_URL,
-  getBaseUrl(),
+// Loopback origins are a local-development convenience. Keeping them out of
+// production prevents a credentialed cross-origin request from any process
+// listening on the operator's own machine from reaching the API. Production
+// deployments declare their origins through CORS_ALLOWED_ORIGINS.
+const DEVELOPMENT_ORIGINS = [
   "http://localhost:3000",
   "http://127.0.0.1:3000",
   "http://localhost:3001",
+];
+
+const allowedOrigins = [
+  env.NEXT_PUBLIC_APP_URL,
+  getBaseUrl(),
+  ...(env.NODE_ENV === "production" ? [] : DEVELOPMENT_ORIGINS),
   ...(env.CORS_ALLOWED_ORIGINS?.split(",") ?? []),
 ]
   .map((origin) => origin.trim())

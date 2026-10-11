@@ -1,6 +1,6 @@
 import {
   ActivityWorker,
-  InMemoryActivityRegistry,
+  type InMemoryActivityRegistry,
   InMemoryTaskQueue,
   InMemoryWorkflowHistoryStore,
   ReplayWorkflowRunner,

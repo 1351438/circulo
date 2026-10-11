@@ -13,7 +13,7 @@ import { deterministicWorkflowEventId } from "../agent-loop-state";
 import type { OrchestrationAgentProfile } from "../orchestration-agent-profile";
 import { formatOrchestrationAgentProfile } from "../orchestration-agent-profile";
 import type { OrchestrationInput } from "../types";
-import { type AgentExecutionResult } from "./execute-agent-task-step";
+import type { AgentExecutionResult } from "./execute-agent-task-step";
 import type { ExecutionPlan } from "./plan-agent-execution-step";
 
 const agentProgressDecisionSchema = z.object({

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { ComponentProps } from "react";
+import type { ComponentProps } from "react";
 import { AccordionTrigger } from "../ui/accordion";
 
 interface CustomAccordionTriggerProps extends ComponentProps<

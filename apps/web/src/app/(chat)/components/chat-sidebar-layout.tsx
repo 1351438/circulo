@@ -7,7 +7,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { useSidebar } from "@/components/ui/sidebar";
-import React from "react";
+import type React from "react";
 import { ChatSidebarResizablePanel } from "./chat-sidebar-resizable-panel";
 
 interface ChatSidebarLayoutProps {

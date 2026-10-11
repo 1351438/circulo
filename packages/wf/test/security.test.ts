@@ -12,6 +12,30 @@ import {
   WorkflowHttpAdapter,
 } from "../src";
 
+/**
+ * These gateways only register their bus subscription after an async token
+ * verification resolves, and the in-memory buses drop an event published
+ * while nobody is subscribed. Waiting a macrotask is not enough to guarantee
+ * the subscription exists, so publishing early loses the event and the
+ * pending `iterator.next()` never settles. Patch `subscribe` so the test can
+ * await the real registration instead of guessing at the timing.
+ */
+function trackSubscription<
+  T extends { subscribe: (...args: never[]) => () => void },
+>(bus: T): { bus: T; subscribed: Promise<void> } {
+  const original = bus.subscribe.bind(bus) as T["subscribe"];
+  let markSubscribed: () => void = () => undefined;
+  const subscribed = new Promise<void>((resolve) => {
+    markSubscribed = resolve;
+  });
+  bus.subscribe = ((...args: never[]) => {
+    const unsubscribe = original(...args);
+    markSubscribed();
+    return unsubscribe;
+  }) as T["subscribe"];
+  return { bus, subscribed };
+}
+
 describe("secure workflow access", () => {
   it("issues, verifies, authorizes, and revokes scoped tenant tokens", async () => {
     const revocations = new InMemoryTokenRevocationStore();
@@ -36,7 +60,9 @@ describe("secure workflow access", () => {
   });
 
   it("streams only events authorized by the signed token", async () => {
-    const bus = new InMemoryEventBus<unknown>();
+    const { bus, subscribed } = trackSubscription(
+      new InMemoryEventBus<unknown>(),
+    );
     const signer = new WorkflowAccessTokenSigner(
       "a-secret-that-is-longer-than-32-characters",
     );
@@ -49,7 +75,7 @@ describe("secure workflow access", () => {
     const stream = gateway.stream("workflow-1", token);
     const iterator = stream[Symbol.asyncIterator]();
     const nextEvent = iterator.next();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await subscribed;
     await bus.publish({
       id: "event-1",
       workflowId: "workflow-1",
@@ -175,7 +201,9 @@ describe("secure workflow access", () => {
   });
 
   it("streams authoritative replay history through the same scoped token boundary", async () => {
-    const historyBus = new InMemoryWorkflowHistoryEventBus();
+    const { bus: historyBus, subscribed } = trackSubscription(
+      new InMemoryWorkflowHistoryEventBus(),
+    );
     const history = new EventPublishingWorkflowHistoryStore(
       new InMemoryWorkflowHistoryStore(),
       historyBus,
@@ -193,7 +221,7 @@ describe("secure workflow access", () => {
       .stream("workflow-history", token, { runId: "run-1" })
       [Symbol.asyncIterator]();
     const nextEvent = iterator.next();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await subscribed;
     await history.append(
       {
         workflowId: "workflow-history",

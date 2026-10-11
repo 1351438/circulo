@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { ComponentProps } from "react";
+import type { ComponentProps } from "react";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 
 interface CustomScrollAreaProps extends ComponentProps<typeof ScrollArea> {}

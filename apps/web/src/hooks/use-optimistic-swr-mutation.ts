@@ -1,8 +1,8 @@
 import { useCallback } from "react";
-import { Arguments, Key, useSWRConfig } from "swr";
+import { type Arguments, type Key, useSWRConfig } from "swr";
 import useSWRMutation, {
-  MutationFetcher,
-  SWRMutationConfiguration,
+  type MutationFetcher,
+  type SWRMutationConfiguration,
 } from "swr/mutation";
 
 type MatchMutateKey = Arguments | ((key?: Arguments) => boolean);
