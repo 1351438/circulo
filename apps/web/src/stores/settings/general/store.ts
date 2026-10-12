@@ -6,14 +6,14 @@ import { devtools, persist } from "zustand/middleware";
 const logger = createLogger("GeneralStore");
 
 const CACHE_TIMEOUT = 3600000; // 1 hour - settings rarely change
-const MAX_ERROR_RETRIES = 2;
+const _MAX_ERROR_RETRIES = 2;
 
 export const useGeneralStore = create<GeneralStore>()(
   devtools(
     persist(
-      (set, get) => {
+      (set, _get) => {
         let lastLoadTime = 0;
-        let errorRetryCount = 0;
+        let _errorRetryCount = 0;
         let hasLoadedFromDb = false; // Track if we've loaded from DB in this session
 
         const store: General = {
@@ -58,7 +58,7 @@ export const useGeneralStore = create<GeneralStore>()(
               });
 
               lastLoadTime = now;
-              errorRetryCount = 0;
+              _errorRetryCount = 0;
               hasLoadedFromDb = true;
             } catch (error) {
               logger.error("Error loading settings:", error);
@@ -83,7 +83,7 @@ export const useGeneralStore = create<GeneralStore>()(
 
               set({ error: null });
               lastLoadTime = Date.now();
-              errorRetryCount = 0;
+              _errorRetryCount = 0;
             } catch (error) {
               logger.error(`Error updating setting ${key}:`, error);
               set({

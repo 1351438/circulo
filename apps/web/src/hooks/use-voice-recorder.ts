@@ -98,7 +98,9 @@ export function useVoiceRecorder({
 
   const resetRecordingState = useCallback(() => {
     clearFinalizeTimer();
-    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current?.getTracks().forEach((track) => {
+      track.stop();
+    });
     streamRef.current = null;
     recorderRef.current = null;
     startedAtRef.current = null;
@@ -284,7 +286,9 @@ export function useVoiceRecorder({
       recorder.start();
       setIsRecording(true);
     } catch (caughtError) {
-      stream?.getTracks().forEach((track) => track.stop());
+      stream?.getTracks().forEach((track) => {
+        track.stop();
+      });
       stopRecognition();
       resetRecordingState();
       const recordingError =
@@ -324,7 +328,9 @@ export function useVoiceRecorder({
       clearFinalizeTimer();
       const recorder = recorderRef.current;
       if (recorder && recorder.state !== "inactive") recorder.stop();
-      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current?.getTracks().forEach((track) => {
+        track.stop();
+      });
     };
   }, [clearFinalizeTimer, stopRecognition]);
 

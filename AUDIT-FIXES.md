@@ -15,13 +15,13 @@ the working tree; part 3 lists what was deliberately left alone and why.
 
 **Three of the four quality gates were not actually enforcing anything.**
 
-| Gate | Before | After |
-| --- | --- | --- |
-| `bun run lint:check` | **Crashed** — binary not found. Even when run, 0 rules were enabled. | Passes, with Biome's recommended ruleset active. |
-| `bun run typecheck` | Passed, but with 1 777 lines of auth code excluded via `@ts-nocheck`. | Passes (exclusion still present — see 3.1). |
-| `bun run test` | Failed intermittently (~2 in 3 full runs) on a hanging workflow-security test. | Passes; 3 consecutive forced full runs clean. |
-| `bun run format:check` | Failed on **1 114 of 1 114 files**. | Fixed at the cause (line-ending normalisation). |
-| `bun run build` | Passed. | Passes. |
+| Gate                   | Before                                                                         | After                                            |
+| ---------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------ |
+| `bun run lint:check`   | **Crashed** — binary not found. Even when run, 0 rules were enabled.           | Passes, with Biome's recommended ruleset active. |
+| `bun run typecheck`    | Passed, but with 1 777 lines of auth code excluded via `@ts-nocheck`.          | Passes (exclusion still present — see 3.1).      |
+| `bun run test`         | Failed intermittently (~2 in 3 full runs) on a hanging workflow-security test. | Passes; 3 consecutive forced full runs clean.    |
+| `bun run format:check` | Failed on **1 114 of 1 114 files**.                                            | Fixed at the cause (line-ending normalisation).  |
+| `bun run build`        | Passed.                                                                        | Passes.                                          |
 
 The most consequential functional finding is **2.1**: production server logging
 was disabled outright, silencing 196 log calls across 35 modules.
@@ -81,12 +81,16 @@ Two tests synchronised on a single macrotask:
 ```ts
 const nextEvent = iterator.next();
 await new Promise((resolve) => setTimeout(resolve, 0));
-await bus.publish({ /* ... */ });
-await expect(nextEvent).resolves.toMatchObject({ /* ... */ });
+await bus.publish({
+  /* ... */
+});
+await expect(nextEvent).resolves.toMatchObject({
+  /* ... */
+});
 ```
 
 Both gateways (`SecureWorkflowStreamGateway`,
-`SecureWorkflowHistoryStreamGateway`) only call `eventBus.subscribe()` *after*
+`SecureWorkflowHistoryStreamGateway`) only call `eventBus.subscribe()` _after_
 awaiting `tokens.verify(token)` — see
 `packages/wf/src/security/history-stream-gateway.ts:48-60`. One `setTimeout(0)`
 does not guarantee that await chain has settled.
@@ -129,7 +133,7 @@ Two independent defects:
 Enabling the recommended set surfaced **347 errors, 458 warnings and 96 infos**
 — too large to clear in one pass without a red gate. So `biome.json` now turns
 on `recommended` and explicitly lists the 42 currently-violated rules as `off`,
-with their counts recorded in 3.2 as a backlog. This makes every *clean* rule
+with their counts recorded in 3.2 as a backlog. This makes every _clean_ rule
 enforced from now on, including these, which were fixed as part of this pass:
 
 - `suspicious/noDuplicateObjectKeys`
@@ -214,20 +218,23 @@ The effect's guard was inverted:
 const mounted = useRef(false);
 useEffect(() => {
   highlightCode(code, language, showLineNumbers).then(([light, dark]) => {
-    if (!mounted.current) {          // only paints when NOT mounted
+    if (!mounted.current) {
+      // only paints when NOT mounted
       setHtml(light);
       mounted.current = true;
     }
   });
-  return () => { mounted.current = false; };
+  return () => {
+    mounted.current = false;
+  };
 }, [code, language, showLineNumbers]);
 ```
 
 Intended as a "still mounted" check, it did the opposite:
 
 - When `code` changes, two highlight runs can be in flight. Whichever resolves
-  *first* sets `mounted.current = true`; the newer run then sees it `true` and is
-  **skipped** — so the block keeps rendering the *older* code. For tool
+  _first_ sets `mounted.current = true`; the newer run then sees it `true` and is
+  **skipped** — so the block keeps rendering the _older_ code. For tool
   input/output that updates while streaming, stale output sticks.
 - On unmount the cleanup sets the flag to `false`, so a late resolution passes
   the guard and calls `setState` on an unmounted component — precisely what the
@@ -242,16 +249,16 @@ rejecting unhandled. Dropped the now-unused `useRef` import.
 
 ### 2.9 Smaller cleanups
 
-| Item | Location | Change |
-| --- | --- | --- |
-| Swallowed sandbox-kill failure | `apps/server/src/lib/execution/e2b.ts:108` | `catch {}` hid failures to tear down an E2B sandbox — a leak that keeps billing and quota. Now `logger.warn` with the `sandboxId`. |
-| Wrong dev fallback port | `apps/web/src/lib/urls/utils.ts:23` | `getBaseUrl()` fell back to `http://localhost:3001`, which is neither the web app (3000) nor the API (3002); every other fallback in the same file uses 3000. Corrected to 3000. |
-| Foreign product name in outbound headers | `apps/server/src/lib/auth.ts:511,534,1286` | Three GitHub API calls sent `User-Agent: sim-studio` / `sim-studio/1.0`, identifying the app as an unrelated product. Now `circulo` / `circulo/1.0`. |
-| Stale commented-out example block | `apps/server/src/lib/permissions.ts` | Removed a 48-line commented "Usage Examples" block whose import path (`@/lib/auth/permissions`) no longer exists. 402 → 355 lines. |
-| Duplicate object key | `apps/desktop/src/main.cjs` | `NEXT_PUBLIC_CIRCULO_RUNTIME_KIND` was declared twice in the runtime env (same value, so harmless). Removed the duplicate. |
-| Loose equality | `apps/web/src/components/app-sidebar.tsx`, `apps/web/src/components/ui/field.tsx`, `packages/db/repositories/vote-repo.ts` | Three `==` comparisons changed to `===`. |
-| Empty destructuring pattern | `.../account/account.tsx` | `({}) => (` → `() => (`. |
-| Stale lockfile | `bun.lock` | The lockfile recorded `packages/upload@1.7.0` while its `package.json` says `2.0.0` — the "Version Packages" release commit (`2f2b44d`) bumped the package without regenerating the lock. Resynced as a side effect of the root install. Worth checking why the release workflow leaves this behind. |
+| Item                                     | Location                                                                                                                   | Change                                                                                                                                                                                                                                                                                               |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Swallowed sandbox-kill failure           | `apps/server/src/lib/execution/e2b.ts:108`                                                                                 | `catch {}` hid failures to tear down an E2B sandbox — a leak that keeps billing and quota. Now `logger.warn` with the `sandboxId`.                                                                                                                                                                   |
+| Wrong dev fallback port                  | `apps/web/src/lib/urls/utils.ts:23`                                                                                        | `getBaseUrl()` fell back to `http://localhost:3001`, which is neither the web app (3000) nor the API (3002); every other fallback in the same file uses 3000. Corrected to 3000.                                                                                                                     |
+| Foreign product name in outbound headers | `apps/server/src/lib/auth.ts:511,534,1286`                                                                                 | Three GitHub API calls sent `User-Agent: sim-studio` / `sim-studio/1.0`, identifying the app as an unrelated product. Now `circulo` / `circulo/1.0`.                                                                                                                                                 |
+| Stale commented-out example block        | `apps/server/src/lib/permissions.ts`                                                                                       | Removed a 48-line commented "Usage Examples" block whose import path (`@/lib/auth/permissions`) no longer exists. 402 → 355 lines.                                                                                                                                                                   |
+| Duplicate object key                     | `apps/desktop/src/main.cjs`                                                                                                | `NEXT_PUBLIC_CIRCULO_RUNTIME_KIND` was declared twice in the runtime env (same value, so harmless). Removed the duplicate.                                                                                                                                                                           |
+| Loose equality                           | `apps/web/src/components/app-sidebar.tsx`, `apps/web/src/components/ui/field.tsx`, `packages/db/repositories/vote-repo.ts` | Three `==` comparisons changed to `===`.                                                                                                                                                                                                                                                             |
+| Empty destructuring pattern              | `.../account/account.tsx`                                                                                                  | `({}) => (` → `() => (`.                                                                                                                                                                                                                                                                             |
+| Stale lockfile                           | `bun.lock`                                                                                                                 | The lockfile recorded `packages/upload@1.7.0` while its `package.json` says `2.0.0` — the "Version Packages" release commit (`2f2b44d`) bumped the package without regenerating the lock. Resynced as a side effect of the root install. Worth checking why the release workflow leaves this behind. |
 
 ---
 
@@ -272,23 +279,25 @@ typecheck is a CI gate.
 
 I measured the cost: removing the pragma produces **70 errors**.
 
-| Count | Code | Meaning |
-| --- | --- | --- |
-| 48 | TS18046 | `'data' / 'emails' / 'profile' is of type 'unknown'` |
-| 11 | TS7006 | `Parameter 'tokens' implicitly has an 'any' type` |
-| 4 | TS2304 | `Cannot find name 'HeadersInit'` / `'User'` |
-| 3 | TS2339 | Property missing on type |
-| 2 | TS2352 | Unsound `as` conversion on the session/user shape |
-| 1 | TS2532 | `Object is possibly 'undefined'` |
-| 1 | TS2322 | Provider config type mismatch |
+| Count | Code    | Meaning                                              |
+| ----- | ------- | ---------------------------------------------------- |
+| 48    | TS18046 | `'data' / 'emails' / 'profile' is of type 'unknown'` |
+| 11    | TS7006  | `Parameter 'tokens' implicitly has an 'any' type`    |
+| 4     | TS2304  | `Cannot find name 'HeadersInit'` / `'User'`          |
+| 3     | TS2339  | Property missing on type                             |
+| 2     | TS2352  | Unsound `as` conversion on the session/user shape    |
+| 1     | TS2532  | `Object is possibly 'undefined'`                     |
+| 1     | TS2322  | Provider config type mismatch                        |
 
 The 48 `unknown` errors are the ones that matter: they are OAuth provider
 responses consumed without narrowing, e.g.
 `apps/server/src/lib/auth.ts:526` —
 
 ```ts
-const profile = await profileResponse.json();   // unknown
-if (!profile.email) { /* ... */ }               // unchecked
+const profile = await profileResponse.json(); // unknown
+if (!profile.email) {
+  /* ... */
+} // unchecked
 ```
 
 There is no runtime validation either, so the identity-provider response shape
@@ -309,18 +318,18 @@ makes the gate progressively stronger. Ordered by likely value, not count:
 
 **Bug-prone — worth fixing deliberately**
 
-| Count | Rule | Note |
-| --- | --- | --- |
-| 39 | `correctness/useExhaustiveDependencies` | Stale-closure class. This is the family that produced 2.8; worth auditing rather than auto-fixing. |
-| 22 | `suspicious/noControlCharactersInRegex` | Needs review — plausibly intentional in sanitisation regexes, but each should be confirmed. |
-| 17 | `suspicious/noArrayIndexKey` | React reconciliation bugs on reorder. |
-| 14 + 13 + 6 | `correctness/noUnusedVariables`, `noUnusedFunctionParameters`, `noUnusedPrivateClassMembers` | 33 dead bindings; mechanical. |
-| 12 | `suspicious/useIterableCallbackReturn` | I checked all 12: every one is a `forEach` callback with an implicit arrow return. Harmless today, cheap to tidy. |
-| 7 | `suspicious/noPrototypeBuiltins` | Mostly `packages/di` — real hazard on untrusted keys. |
-| 5 | `suspicious/noShadowRestrictedNames` | `packages/di`. |
-| 4 | `suspicious/noImplicitAnyLet` | |
-| 3 | `security/noDangerouslySetInnerHtml` | All three reviewed and safe: two are Shiki `codeToHtml` output (escaped), one is `chart.tsx` CSS variables. Keep the rule off with a targeted suppression, or add inline justifications. |
-| 3 | `correctness/useParseIntRadix` | |
+| Count       | Rule                                                                                         | Note                                                                                                                                                                                     |
+| ----------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 39          | `correctness/useExhaustiveDependencies`                                                      | Stale-closure class. This is the family that produced 2.8; worth auditing rather than auto-fixing.                                                                                       |
+| 22          | `suspicious/noControlCharactersInRegex`                                                      | Needs review — plausibly intentional in sanitisation regexes, but each should be confirmed.                                                                                              |
+| 17          | `suspicious/noArrayIndexKey`                                                                 | React reconciliation bugs on reorder.                                                                                                                                                    |
+| 14 + 13 + 6 | `correctness/noUnusedVariables`, `noUnusedFunctionParameters`, `noUnusedPrivateClassMembers` | 33 dead bindings; mechanical.                                                                                                                                                            |
+| 12          | `suspicious/useIterableCallbackReturn`                                                       | I checked all 12: every one is a `forEach` callback with an implicit arrow return. Harmless today, cheap to tidy.                                                                        |
+| 7           | `suspicious/noPrototypeBuiltins`                                                             | Mostly `packages/di` — real hazard on untrusted keys.                                                                                                                                    |
+| 5           | `suspicious/noShadowRestrictedNames`                                                         | `packages/di`.                                                                                                                                                                           |
+| 4           | `suspicious/noImplicitAnyLet`                                                                |                                                                                                                                                                                          |
+| 3           | `security/noDangerouslySetInnerHtml`                                                         | All three reviewed and safe: two are Shiki `codeToHtml` output (escaped), one is `chart.tsx` CSS variables. Keep the rule off with a targeted suppression, or add inline justifications. |
+| 3           | `correctness/useParseIntRadix`                                                               |                                                                                                                                                                                          |
 
 **Mechanical / stylistic — safe to auto-fix in one commit**
 
@@ -352,14 +361,14 @@ anywhere in the repository**. The actual validation layer is Zod, used in 27 of
 36 route files.
 
 I left this in place rather than deleting it because the choice is genuinely
-yours: it is dead weight that also *reads* as active protection, which is its
+yours: it is dead weight that also _reads_ as active protection, which is its
 own risk, but several of these helpers are things the codebase arguably should
 be using. Two concrete cases where one of them applies right now:
 
 - `apps/server/src/lib/execution/e2b.ts:24` logs the full user-supplied `code`
   at `info` level. Harmless while production `minLevel` is `ERROR`, but an
   operator setting `LOG_LEVEL=INFO` would write arbitrary user code to logs —
-  exactly what `sanitizeForLogging` exists for. Note this became *reachable*
+  exactly what `sanitizeForLogging` exists for. Note this became _reachable_
   with fix 2.1; it was dead before.
 - `validateExternalUrl` / `validateProxyUrl` overlap with the
   `message-url.ts` work recorded as SEC-006 in
@@ -380,23 +389,23 @@ handler), `routes/chat.ts`, `routes/chat-stream.ts`, `routes/webhooks.ts`,
 `services/scheduler.ts` and `workflows/runtime/workflow-run-service.ts`.
 
 These skip module tagging, level filtering and `LOG_LEVEL`. Before fix 2.1 they
-were the *only* server logging that worked in production, which is probably how
+were the _only_ server logging that worked in production, which is probably how
 they accumulated. Now that `createLogger` functions, they should be migrated to
 it — and the global error handler at `app.ts:165` is the one to do first.
 
 ### 3.5 `apps/web` has no tests at all — Medium
 
-| Workspace | Lines | Test files |
-| --- | --- | --- |
-| `apps/web` | 73 753 | **0** (no `test` script) |
-| `apps/server` | 35 239 | 26 |
-| `packages/wf` | 16 985 | 15 |
-| `packages/upload` | 9 624 | 16 |
-| `packages/di` | 7 354 | 3 |
-| `packages/db` | 5 653 | **0** |
-| `packages/file-parsers` | 930 | **0** |
-| `packages/redis` | 325 | **0** |
-| `packages/core` | 290 | **0** |
+| Workspace               | Lines  | Test files               |
+| ----------------------- | ------ | ------------------------ |
+| `apps/web`              | 73 753 | **0** (no `test` script) |
+| `apps/server`           | 35 239 | 26                       |
+| `packages/wf`           | 16 985 | 15                       |
+| `packages/upload`       | 9 624  | 16                       |
+| `packages/di`           | 7 354  | 3                        |
+| `packages/db`           | 5 653  | **0**                    |
+| `packages/file-parsers` | 930    | **0**                    |
+| `packages/redis`        | 325    | **0**                    |
+| `packages/core`         | 290    | **0**                    |
 
 The largest surface in the repository is entirely unverified, and it is where
 2.8 lived. `packages/db` holds the repository layer, also untested.
@@ -430,7 +439,7 @@ So a storage misconfiguration is not caught at boot and is undiscoverable from
 the example file — notable given `/health/ready` is documented as verifying
 bucket configuration. Others (`E2B_API_KEY`, `REDIS_URL`,
 `INTERNAL_API_SECRET`, `GITHUB_REPO_CLIENT_ID/SECRET`,
-`CIRCULO_MODEL_PRICING_JSON`) *are* in the schema but are read raw anyway,
+`CIRCULO_MODEL_PRICING_JSON`) _are_ in the schema but are read raw anyway,
 skipping validation.
 
 **Recommendation.** Add the nine to the schema and `.env.example`; route all
