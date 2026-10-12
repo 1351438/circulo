@@ -7,7 +7,6 @@ import { magicLinkPlugin } from "@/lib/auth/magic-link-plugin";
 import { organizationPlugin } from "@/lib/auth/organization-plugin";
 import { themePlugin } from "@/lib/auth/theme-plugin";
 import { twoFactorPlugin } from "@/lib/auth/two-factor-plugin";
-import { getEnv } from "@/lib/env";
 import { getBaseUrl } from "@/lib/urls/utils";
 import { useTheme } from "next-themes";
 import Link from "next/link";
@@ -19,10 +18,11 @@ type RuntimeKind = "cloud" | "self-hosted" | "desktop";
 export function AuthClientProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { setTheme } = useTheme();
-  const [runtimeKind, setRuntimeKind] = useState<RuntimeKind>(
-    (getEnv("NEXT_PUBLIC_CIRCULO_RUNTIME_KIND") as RuntimeKind | undefined) ??
-      "cloud",
-  );
+  // Use the same first-render value on the server and browser. Public runtime
+  // env vars can be inlined into the client bundle at build time while the
+  // server receives them at launch, which otherwise makes auth routes render
+  // different sign-in variants during hydration.
+  const [runtimeKind, setRuntimeKind] = useState<RuntimeKind>("cloud");
 
   useEffect(() => {
     let active = true;

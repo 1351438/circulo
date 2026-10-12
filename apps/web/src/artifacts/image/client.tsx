@@ -1,6 +1,7 @@
 import { Artifact } from "@/components/artifacts/create-artifact";
 import { ImageEditor } from "@/components/editors/image/image-editor";
 import { CopyIcon, RedoIcon, UndoIcon } from "@/components/icons/icons";
+import { writeImageToClipboard } from "@/lib/clipboard";
 import { toast } from "sonner";
 
 export const imageArtifact = new Artifact({
@@ -48,26 +49,13 @@ export const imageArtifact = new Artifact({
     {
       icon: <CopyIcon size={18} />,
       description: "Copy image to clipboard",
-      onClick: ({ content }) => {
-        const img = new Image();
-        img.src = `data:image/png;base64,${content}`;
-
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext("2d");
-          ctx?.drawImage(img, 0, 0);
-          canvas.toBlob((blob) => {
-            if (blob) {
-              navigator.clipboard.write([
-                new ClipboardItem({ "image/png": blob }),
-              ]);
-            }
-          }, "image/png");
-        };
-
-        toast.success("Copied image to clipboard!");
+      onClick: async ({ content }) => {
+        try {
+          await writeImageToClipboard(`data:image/png;base64,${content}`);
+          toast.success("Copied image to clipboard!");
+        } catch {
+          toast.error("Could not copy image to clipboard.");
+        }
       },
     },
   ],

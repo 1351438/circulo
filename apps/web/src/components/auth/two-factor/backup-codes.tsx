@@ -5,15 +5,12 @@ import {
   formatBackupCodesText,
   printTextFile,
 } from "@better-auth-ui/core";
-import {
-  useAuth,
-  useAuthPlugin,
-  useCopyToClipboard,
-} from "@better-auth-ui/react";
+import { useAuth, useAuthPlugin } from "@better-auth-ui/react";
 import { Check, Copy, Download, Printer } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { useClipboardCopy } from "@/hooks/use-clipboard-copy";
 import { twoFactorPlugin } from "@/lib/auth/two-factor-plugin";
 
 export type BackupCodesProps = {
@@ -33,7 +30,7 @@ export function BackupCodes({ codes }: BackupCodesProps) {
   const { localization } = useAuth();
   const { localization: twoFactorLocalization } =
     useAuthPlugin(twoFactorPlugin);
-  const { copied, copy } = useCopyToClipboard({
+  const { copied, copy } = useClipboardCopy({
     onError: () => toast.error(twoFactorLocalization.backupCodesCopyFailed),
   });
   const getBackupCodesText = () =>

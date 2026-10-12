@@ -633,10 +633,8 @@ function SidebarMenuSkeleton({
   customSkeleton?: (props: React.ComponentProps<"div">) => React.JSX.Element;
   isWrapperSkeleton?: boolean;
 }) {
-  // Random width between 50 to 90%.
-  const [width] = React.useState(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`;
-  });
+  // Keep the skeleton width stable so server and client markup match.
+  const width = "72%";
 
   const FinalSkeleton = customSkeleton ?? Skeleton;
   const Wrapper = isWrapperSkeleton ? FinalSkeleton : "div";

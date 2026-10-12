@@ -11,6 +11,8 @@ type NavigationState = {
 type DesktopBridge = {
   controlsSide: "left" | "right";
   getNavigationState: () => Promise<NavigationState>;
+  writeClipboardText: (text: string) => Promise<void>;
+  writeClipboardImage: (dataUrl: string) => Promise<void>;
   navigateBack: () => void;
   navigateForward: () => void;
   onNavigationState: (listener: (state: NavigationState) => void) => () => void;

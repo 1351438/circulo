@@ -4,7 +4,7 @@ import {
   type AdditionalField as AdditionalFieldConfig,
   resolveInputType,
 } from "@better-auth-ui/core";
-import { useAuth, useCopyToClipboard } from "@better-auth-ui/react";
+import { useAuth } from "@better-auth-ui/react";
 import { format } from "date-fns";
 import { CalendarIcon, Check, ChevronDownIcon, Copy } from "lucide-react";
 import { type ComponentType, useRef, useState } from "react";
@@ -50,6 +50,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useClipboardCopy } from "@/hooks/use-clipboard-copy";
 import { cn } from "@/lib/utils";
 
 export type AdditionalFieldProps = {
@@ -89,7 +90,7 @@ function CopyButton({
   isDisabled?: boolean;
 }) {
   const { localization } = useAuth();
-  const { copied, copy } = useCopyToClipboard({
+  const { copied, copy } = useClipboardCopy({
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : String(error)),
   });

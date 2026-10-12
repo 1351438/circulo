@@ -7,6 +7,7 @@ import {
   SparklesIcon,
   UndoIcon,
 } from "@/components/icons/icons";
+import { writeTextToClipboard } from "@/lib/clipboard";
 import { parse, unparse } from "papaparse";
 import { toast } from "sonner";
 
@@ -68,7 +69,7 @@ export const sheetArtifact = new Artifact<"sheet", Metadata>({
     {
       icon: <CopyIcon />,
       description: "Copy as .csv",
-      onClick: ({ content }) => {
+      onClick: async ({ content }) => {
         const parsed = parse<string[]>(content, { skipEmptyLines: true });
 
         const nonEmptyRows = parsed.data.filter((row) =>
@@ -77,8 +78,12 @@ export const sheetArtifact = new Artifact<"sheet", Metadata>({
 
         const cleanedCsv = unparse(nonEmptyRows);
 
-        navigator.clipboard.writeText(cleanedCsv);
-        toast.success("Copied csv to clipboard!");
+        try {
+          await writeTextToClipboard(cleanedCsv);
+          toast.success("Copied csv to clipboard!");
+        } catch {
+          toast.error("Could not copy CSV to clipboard.");
+        }
       },
     },
   ],

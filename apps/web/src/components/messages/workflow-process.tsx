@@ -59,7 +59,7 @@ export function WorkflowProcess({
   // memoizing this projection can otherwise leave the activity card stuck on
   // its first event until the terminal message arrives.
   const process = buildProcess(parts);
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(0);
   const [fallbackStartedAt, setFallbackStartedAt] = useState<number>();
   const [actionStatuses, setActionStatuses] = useState<Record<string, string>>(
     {},
@@ -71,6 +71,7 @@ export function WorkflowProcess({
     }
   }, [process?.status]);
   useEffect(() => {
+    setNow(Date.now());
     if (process?.status !== "running") return;
     const serverStartedAt = process.startedAt
       ? Date.parse(process.startedAt)

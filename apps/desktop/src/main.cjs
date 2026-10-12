@@ -1,8 +1,10 @@
 const {
   app,
   BrowserWindow,
+  clipboard,
   dialog,
   ipcMain,
+  nativeImage,
   safeStorage,
   session,
   shell,
@@ -384,6 +386,32 @@ ipcMain.handle("circulo:navigation-state", () => ({
     mainWindow?.webContents.navigationHistory.canGoForward(),
   ),
 }));
+ipcMain.handle("circulo:clipboard-write-text", (event, text) => {
+  if (event.sender !== mainWindow?.webContents) {
+    throw new Error("Clipboard access is only available to the app window.");
+  }
+  if (typeof text !== "string") {
+    throw new TypeError("Clipboard text must be a string.");
+  }
+
+  clipboard.writeText(text);
+});
+ipcMain.handle("circulo:clipboard-write-image", (event, dataUrl) => {
+  if (event.sender !== mainWindow?.webContents) {
+    throw new Error("Clipboard access is only available to the app window.");
+  }
+  if (
+    typeof dataUrl !== "string" ||
+    dataUrl.length > 64 * 1024 * 1024 ||
+    !/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(dataUrl)
+  ) {
+    throw new TypeError("Clipboard image must be a valid PNG data URL.");
+  }
+
+  const image = nativeImage.createFromDataURL(dataUrl);
+  if (image.isEmpty()) throw new TypeError("Clipboard image is invalid.");
+  clipboard.writeImage(image);
+});
 ipcMain.on("circulo:titlebar-theme", (event, theme) => {
   if (event.sender !== mainWindow?.webContents) return;
   if (theme !== "dark" && theme !== "light") return;
@@ -432,8 +460,7 @@ if (hasSingleInstanceLock) {
         if (!mainWindow) return;
         mainWindow.webContents.send("circulo:navigation-state", {
           canGoBack: mainWindow.webContents.navigationHistory.canGoBack(),
-          canGoForward:
-            mainWindow.webContents.navigationHistory.canGoForward(),
+          canGoForward: mainWindow.webContents.navigationHistory.canGoForward(),
         });
       };
       mainWindow.webContents.on("did-navigate", sendNavigationState);

@@ -5,13 +5,13 @@ import {
   ThumbDownIcon,
   ThumbUpIcon,
 } from "@/components/icons/icons";
+import { writeTextToClipboard } from "@/lib/clipboard";
 import type { ChatMessage } from "@/lib/types";
 import type { Vote } from "@circulo-ai/db";
 import equal from "fast-deep-equal";
 import { memo } from "react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
-import { useCopyToClipboard } from "usehooks-ts";
 
 export function PureMessageActions({
   chatId,
@@ -29,8 +29,6 @@ export function PureMessageActions({
   canEdit?: boolean;
 }) {
   const { mutate } = useSWRConfig();
-  const [_, copyToClipboard] = useCopyToClipboard();
-
   if (isLoading) {
     return null;
   }
@@ -47,8 +45,12 @@ export function PureMessageActions({
       return;
     }
 
-    await copyToClipboard(textFromParts);
-    toast.success("Copied to clipboard!");
+    try {
+      await writeTextToClipboard(textFromParts);
+      toast.success("Copied to clipboard!");
+    } catch {
+      toast.error("Could not copy to clipboard.");
+    }
   };
 
   // User messages get edit (on hover) and copy actions

@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useAuth,
-  useAuthPlugin,
-  useCopyToClipboard,
-} from "@better-auth-ui/react";
+import { useAuth, useAuthPlugin } from "@better-auth-ui/react";
 import { Check, Copy, Key } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,6 +20,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
+import { useClipboardCopy } from "@/hooks/use-clipboard-copy";
 import { apiKeyPlugin } from "@/lib/auth/api-key-plugin";
 
 export type NewApiKeyDialogProps = {
@@ -42,7 +39,7 @@ export function NewApiKeyDialog({
   const { localization } = useAuth();
   const { localization: apiKeyLocalization } = useAuthPlugin(apiKeyPlugin);
 
-  const { copied, copy, reset } = useCopyToClipboard({
+  const { copied, copy, reset } = useClipboardCopy({
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : String(error)),
   });

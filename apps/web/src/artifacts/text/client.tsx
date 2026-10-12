@@ -10,6 +10,7 @@ import {
   RedoIcon,
   UndoIcon,
 } from "@/components/icons/icons";
+import { writeTextToClipboard } from "@/lib/clipboard";
 import type { SuggestionStreamData } from "@/lib/types";
 import { toast } from "sonner";
 
@@ -143,9 +144,13 @@ export const textArtifact = new Artifact<"text", TextArtifactMetadata>({
     {
       icon: <CopyIcon size={18} />,
       description: "Copy to clipboard",
-      onClick: ({ content }) => {
-        navigator.clipboard.writeText(content);
-        toast.success("Copied to clipboard!");
+      onClick: async ({ content }) => {
+        try {
+          await writeTextToClipboard(content);
+          toast.success("Copied to clipboard!");
+        } catch {
+          toast.error("Could not copy to clipboard.");
+        }
       },
     },
   ],

@@ -19,15 +19,12 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { Spinner } from "@/components/ui/spinner";
+import { useClipboardCopy } from "@/hooks/use-clipboard-copy";
 import { twoFactorPlugin } from "@/lib/auth/two-factor-plugin";
 import { useTwoFactorPasswordRequirement } from "@/lib/auth/use-two-factor-password";
 import { createQrCodeSvgData } from "@better-auth-ui/core";
 import type { TwoFactorAuthClient } from "@better-auth-ui/core/plugins/two-factor";
-import {
-  useAuth,
-  useAuthPlugin,
-  useCopyToClipboard,
-} from "@better-auth-ui/react";
+import { useAuth, useAuthPlugin } from "@better-auth-ui/react";
 import {
   useEnableTwoFactor,
   useVerifyTotp,
@@ -75,7 +72,7 @@ export function EnableTwoFactorDialog({
     copied: setupKeyCopied,
     copy: copySetupKeyValue,
     reset: resetSetupKeyCopy,
-  } = useCopyToClipboard({
+  } = useClipboardCopy({
     onError: () => toast.error(twoFactorLocalization.setupKeyCopyFailed),
   });
 

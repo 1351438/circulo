@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { writeTextToClipboard } from "@/lib/clipboard";
 import { Copy, Pause, Play, RotateCcw, Trash2, Webhook } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -194,7 +195,14 @@ export function AutomationWebhooks({
             />
             <Button
               aria-label="Copy webhook secret"
-              onClick={() => void navigator.clipboard.writeText(secret)}
+              onClick={async () => {
+                try {
+                  await writeTextToClipboard(secret);
+                  toast.success("Copied webhook secret.");
+                } catch {
+                  toast.error("Could not copy webhook secret.");
+                }
+              }}
               size="icon"
               variant="outline"
             >

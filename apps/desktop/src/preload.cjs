@@ -43,6 +43,10 @@ contextBridge.exposeInMainWorld("circuloDesktop", {
   },
   navigateBack: () => ipcRenderer.send("circulo:navigate-back"),
   navigateForward: () => ipcRenderer.send("circulo:navigate-forward"),
+  writeClipboardText: (text) =>
+    ipcRenderer.invoke("circulo:clipboard-write-text", text),
+  writeClipboardImage: (dataUrl) =>
+    ipcRenderer.invoke("circulo:clipboard-write-image", dataUrl),
   onRuntimeStatus: (listener) => {
     const handler = (_event, status) => listener(status);
     ipcRenderer.on("circulo:runtime-status", handler);
