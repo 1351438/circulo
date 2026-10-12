@@ -2,7 +2,7 @@ import { db, memory, memoryPreference } from "@/db";
 import type { ActorContext, ChatMessage } from "@/lib/types";
 import type { Tool, UIMessageStreamWriter } from "ai";
 import { tool } from "ai";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 export function rememberMemory(params: {
@@ -71,6 +71,42 @@ export function rememberMemory(params: {
             })
             .returning();
       if (!saved) throw new Error("Unable to save personal memory");
+      if (preference?.automaticManagementEnabled !== false) {
+        await db
+          .insert(memoryPreference)
+          .values({
+            organizationId: params.session.organizationId,
+            userId: params.session.userId,
+          })
+          .onConflictDoNothing();
+        const memories = await db.query.memory.findMany({
+          where: and(
+            eq(memory.organizationId, params.session.organizationId),
+            eq(memory.scope, "user"),
+            eq(memory.userId, params.session.userId),
+          ),
+          orderBy: desc(memory.importance),
+          limit: 100,
+        });
+        await db
+          .update(memoryPreference)
+          .set({
+            summary:
+              memories
+                .map((entry) => `- ${entry.key}: ${entry.content}`)
+                .join("\n") || null,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(
+                memoryPreference.organizationId,
+                params.session.organizationId,
+              ),
+              eq(memoryPreference.userId, params.session.userId),
+            ),
+          );
+      }
       params.dataStream.write({
         type: "data-memoryUpdated",
         data: { id: saved.id, key: saved.key },

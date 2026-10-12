@@ -501,7 +501,8 @@ html[data-circulo-desktop="true"] #circulo-desktop-window-toolbar {
   flex: 0 0 var(--circulo-desktop-toolbar-height, 40px);
   height: var(--circulo-desktop-toolbar-height, 40px);
   padding: 0 138px 0 8px;
-  position: relative;
+  position: sticky;
+  top: 0;
   user-select: none;
   width: 100%;
   z-index: 2147483647;
@@ -583,8 +584,25 @@ html[data-circulo-desktop="true"] .h-screen-fix:not(.fixed) {
 }
 
 html[data-circulo-desktop="true"] .min-h-dvh:not(.fixed),
+html[data-circulo-desktop="true"] .min-h-svh:not(.fixed),
 html[data-circulo-desktop="true"] .min-h-screen:not(.fixed) {
   min-height: var(--circulo-content-height);
+}
+
+html[data-circulo-desktop="true"] .h-svh:not(.fixed) {
+  height: var(--circulo-content-height);
+}
+
+html[data-circulo-desktop="true"] [data-slot="sidebar-container"] {
+  top: var(--circulo-desktop-toolbar-height, 40px);
+  bottom: 0;
+  height: var(--circulo-content-height);
+}
+
+html[data-circulo-desktop="true"] [data-slot="sidebar-wrapper"] {
+  height: var(--circulo-content-height);
+  min-height: var(--circulo-content-height);
+  overflow: hidden;
 }
 
 html[data-circulo-desktop="true"] .fixed.h-dvh,
@@ -609,6 +627,58 @@ html[data-circulo-desktop="true"] .main-section:not(:first-of-type) {
 
 html[data-circulo-desktop="true"] .main-section:first-of-type {
   height: calc(var(--circulo-content-height) - 5rem);
+}
+
+html[data-circulo-desktop="true"] [data-slot="sheet-content"][data-side="left"],
+html[data-circulo-desktop="true"]
+  [data-slot="sheet-content"][data-side="right"] {
+  top: var(--circulo-desktop-toolbar-height, 40px);
+  bottom: 0;
+  height: auto;
+  max-height: var(--circulo-content-height);
+}
+
+html[data-circulo-desktop="true"] [data-slot="sheet-content"][data-side="top"] {
+  top: var(--circulo-desktop-toolbar-height, 40px);
+  max-height: var(--circulo-content-height);
+}
+
+html[data-circulo-desktop="true"]
+  [data-slot="sheet-content"][data-side="bottom"] {
+  max-height: var(--circulo-content-height);
+}
+
+html[data-circulo-desktop="true"]
+  [data-slot="drawer-content"][data-vaul-drawer-direction="left"],
+html[data-circulo-desktop="true"]
+  [data-slot="drawer-content"][data-vaul-drawer-direction="right"] {
+  top: calc(var(--circulo-desktop-toolbar-height, 40px) + var(--inset, 1rem));
+  bottom: var(--inset, 1rem);
+  max-height: calc(
+    var(--circulo-content-height) - var(--inset, 1rem) - var(--inset, 1rem)
+  );
+}
+
+html[data-circulo-desktop="true"]
+  [data-slot="drawer-content"][data-vaul-drawer-direction="top"] {
+  top: calc(var(--circulo-desktop-toolbar-height, 40px) + var(--inset, 1rem));
+  max-height: calc(
+    var(--circulo-content-height) - var(--inset, 1rem) - var(--inset, 1rem)
+  );
+}
+
+html[data-circulo-desktop="true"]
+  [data-slot="drawer-content"][data-vaul-drawer-direction="bottom"] {
+  max-height: calc(
+    var(--circulo-content-height) - var(--inset, 1rem) - var(--inset, 1rem)
+  );
+}
+
+html[data-circulo-desktop="true"] [data-slot="dialog-content"],
+html[data-circulo-desktop="true"] [data-slot="alert-dialog-content"] {
+  top: calc(50% + 20px);
+  max-height: calc(var(--circulo-content-height) - 2rem);
+  overflow-y: auto;
 }
 
 @utility no-scrollbar {

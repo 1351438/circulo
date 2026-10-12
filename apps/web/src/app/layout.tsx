@@ -5,6 +5,7 @@ import { isBillingEnabled } from "@/lib/environment";
 import { cn } from "@/lib/utils";
 import { AuthClientProvider } from "@/providers/auth-client-provider";
 import { PointerProvider } from "@/providers/pointer-provider";
+import { SettingsLoader } from "@/providers/settings-loader";
 import { SWRProvider } from "@/providers/swr-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { AutumnProvider } from "autumn-js/react";
@@ -32,7 +33,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <SWRProvider>
       <PointerProvider>
         <TooltipProvider>
-          <AuthClientProvider>{children}</AuthClientProvider>
+          <AuthClientProvider>
+            <SettingsLoader />
+            {children}
+          </AuthClientProvider>
         </TooltipProvider>
         <Toaster />
       </PointerProvider>

@@ -126,12 +126,43 @@ export function Chat({
     return undefined;
   }, [initialMessages]);
 
-  const activeWorkflowRunId = useMemo(() => {
-    if (typeof window === "undefined") return;
-    return (
-      localStorage.getItem(workflowRunStorageKey) ?? persistedWorkflowRunId
-    );
-  }, [persistedWorkflowRunId, workflowRunStorageKey]);
+  const terminalWorkflowRunIds = useMemo(() => {
+    const runIds = new Set<string>();
+    for (const message of initialMessages) {
+      for (const part of message.parts ?? []) {
+        if (part.type !== "data-workflowTrace") continue;
+        const data = (
+          part as {
+            type: "data-workflowTrace";
+            data?: { workflowId?: unknown; status?: unknown };
+          }
+        ).data;
+        if (
+          (data?.status === "completed" || data?.status === "failed") &&
+          typeof data.workflowId === "string"
+        ) {
+          runIds.add(data.workflowId);
+        }
+      }
+    }
+    return runIds;
+  }, [initialMessages]);
+
+  const [storedWorkflowRunId, setStoredWorkflowRunId] = useState<
+    string | undefined
+  >();
+
+  const activeWorkflowRunId = storedWorkflowRunId ?? persistedWorkflowRunId;
+
+  useEffect(() => {
+    const storedRunId = localStorage.getItem(workflowRunStorageKey);
+    if (storedRunId && terminalWorkflowRunIds.has(storedRunId)) {
+      localStorage.removeItem(workflowRunStorageKey);
+      setStoredWorkflowRunId(undefined);
+      return;
+    }
+    setStoredWorkflowRunId(storedRunId ?? undefined);
+  }, [terminalWorkflowRunIds, workflowRunStorageKey]);
 
   useEffect(() => {
     if (activeWorkflowRunId) {
@@ -348,6 +379,7 @@ export function Chat({
     },
 
     onFinish: async () => {
+      handleChatEnd();
       await mutate(`/api/chat/${id}/resources`);
       mutate(unstable_serialize(getChatHistoryPaginationKey));
       await clearCachePattern(/\/api\/conversations.*/);

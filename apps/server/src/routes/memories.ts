@@ -219,6 +219,16 @@ async function refreshMemorySummary(organizationId: string, userId: string) {
   return summary;
 }
 
+async function refreshMemorySummaryWhenEnabled(
+  organizationId: string,
+  userId: string,
+) {
+  const preference = await getOrCreatePreference(organizationId, userId);
+  if (preference?.automaticManagementEnabled) {
+    await refreshMemorySummary(organizationId, userId);
+  }
+}
+
 async function snapshotMemory(existing: typeof memory.$inferSelect) {
   await db.insert(memoryHistory).values({
     memoryId: existing.id,
@@ -249,10 +259,11 @@ router.patch(
   ),
   async (c) => {
     const organizationId = await activeOrganization(c);
+    const changes = c.req.valid("json");
     await getOrCreatePreference(organizationId, c.var.user!.id);
     const [updated] = await db
       .update(memoryPreference)
-      .set({ ...c.req.valid("json"), updatedAt: new Date() })
+      .set({ ...changes, updatedAt: new Date() })
       .where(
         and(
           eq(memoryPreference.organizationId, organizationId),
@@ -260,6 +271,13 @@ router.patch(
         ),
       )
       .returning();
+    if (changes.automaticManagementEnabled === true) {
+      const summary = await refreshMemorySummary(
+        organizationId,
+        c.var.user!.id,
+      );
+      return c.json({ ...updated, summary });
+    }
     return c.json(updated);
   },
 );
@@ -388,7 +406,9 @@ router.post(
         })
         .where(eq(memory.id, existing.id))
         .returning();
-      await refreshMemorySummary(organizationId, c.var.user!.id);
+      if (body.scope === "user") {
+        await refreshMemorySummaryWhenEnabled(organizationId, c.var.user!.id);
+      }
       return c.json(updated);
     }
     const [created] = await db
@@ -408,7 +428,9 @@ router.post(
         userId: body.scope === "user" ? c.var.user!.id : null,
       })
       .returning();
-    await refreshMemorySummary(organizationId, c.var.user!.id);
+    if (body.scope === "user") {
+      await refreshMemorySummaryWhenEnabled(organizationId, c.var.user!.id);
+    }
     return c.json(created, 201);
   },
 );
@@ -495,8 +517,9 @@ router.post(
       })
       .where(eq(memory.id, id))
       .returning();
-    if (existing.scope === "user")
-      await refreshMemorySummary(organizationId, c.var.user!.id);
+    if (existing.scope === "user") {
+      await refreshMemorySummaryWhenEnabled(organizationId, c.var.user!.id);
+    }
     return c.json(restored);
   },
 );
@@ -541,8 +564,9 @@ router.patch(
       .set({ ...c.req.valid("json"), updatedAt: new Date() })
       .where(eq(memory.id, id))
       .returning();
-    if (existing.scope === "user")
-      await refreshMemorySummary(organizationId, c.var.user!.id);
+    if (existing.scope === "user") {
+      await refreshMemorySummaryWhenEnabled(organizationId, c.var.user!.id);
+    }
     return c.json(updated);
   },
 );
@@ -573,8 +597,9 @@ router.delete(
       c.var.apiKeyPermissions,
     );
     await db.delete(memory).where(eq(memory.id, id));
-    if (existing.scope === "user")
-      await refreshMemorySummary(organizationId, c.var.user!.id);
+    if (existing.scope === "user") {
+      await refreshMemorySummaryWhenEnabled(organizationId, c.var.user!.id);
+    }
     return c.json({ deleted: true });
   },
 );

@@ -236,11 +236,18 @@ export function NewChat({ id }: NewChatProps) {
         } catch {
           // The route transition may already have detached the response.
         }
-        return new Response(null, {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers,
-        });
+        return new Response(
+          new ReadableStream<Uint8Array>({
+            start(controller) {
+              controller.close();
+            },
+          }),
+          {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+          },
+        );
       }
       return response;
     },

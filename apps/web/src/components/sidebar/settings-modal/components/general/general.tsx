@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useGeneralStore } from "@/stores/settings/general/store";
 import { useTheme } from "next-themes";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 export function General() {
   const isLoading = useGeneralStore((state) => state.isLoading);
@@ -41,7 +42,15 @@ export function General() {
               onValueChange={(value) => {
                 const nextTheme = value as typeof theme;
                 setTheme(nextTheme);
-                void updateSetting("theme", nextTheme);
+                void updateSetting("theme", nextTheme).catch(
+                  (error: unknown) => {
+                    toast.error(
+                      error instanceof Error
+                        ? error.message
+                        : "Unable to save theme preference",
+                    );
+                  },
+                );
               }}
               value={theme}
             >

@@ -1,19 +1,21 @@
 import { createLogger } from "@/lib/logs/console/logger";
-import type { General, GeneralStore } from "@/stores/settings/general/types";
+import type {
+  General,
+  GeneralStore,
+  UserSettings,
+} from "@/stores/settings/general/types";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 
 const logger = createLogger("GeneralStore");
 
 const CACHE_TIMEOUT = 3600000; // 1 hour - settings rarely change
-const MAX_ERROR_RETRIES = 2;
 
 export const useGeneralStore = create<GeneralStore>()(
   devtools(
     persist(
       (set, get) => {
         let lastLoadTime = 0;
-        let errorRetryCount = 0;
         let hasLoadedFromDb = false; // Track if we've loaded from DB in this session
 
         const store: General = {
@@ -34,7 +36,7 @@ export const useGeneralStore = create<GeneralStore>()(
               return;
             }
 
-            // Skip loading if settings were recently loaded (within 5 seconds)
+            // Skip repeated reads while a recent request is still settling.
             const now = Date.now();
             if (!force && now - lastLoadTime < CACHE_TIMEOUT) {
               logger.debug("Skipping settings load - recently loaded");
@@ -57,8 +59,7 @@ export const useGeneralStore = create<GeneralStore>()(
                 isLoading: false,
               });
 
-              lastLoadTime = now;
-              errorRetryCount = 0;
+              lastLoadTime = Date.now();
               hasLoadedFromDb = true;
             } catch (error) {
               logger.error("Error loading settings:", error);
@@ -70,6 +71,11 @@ export const useGeneralStore = create<GeneralStore>()(
           },
 
           updateSetting: async (key, value) => {
+            const previousTheme = get().theme;
+            if (key === "theme") {
+              set({ theme: value as UserSettings["theme"], error: null });
+            }
+
             try {
               const response = await fetch("/api/users/me/settings", {
                 method: "PATCH",
@@ -83,10 +89,10 @@ export const useGeneralStore = create<GeneralStore>()(
 
               set({ error: null });
               lastLoadTime = Date.now();
-              errorRetryCount = 0;
             } catch (error) {
               logger.error(`Error updating setting ${key}:`, error);
               set({
+                ...(key === "theme" ? { theme: previousTheme } : {}),
                 error: error instanceof Error ? error.message : "Unknown error",
               });
 

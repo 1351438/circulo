@@ -41,6 +41,23 @@ function getChatAvatarInitials(title: string) {
     .toUpperCase();
 }
 
+const CHAT_AVATAR_GRADIENTS = [
+  "from-indigo-500 via-violet-500 to-fuchsia-500",
+  "from-cyan-500 via-sky-500 to-blue-600",
+  "from-emerald-500 via-teal-500 to-cyan-600",
+  "from-amber-400 via-orange-500 to-rose-500",
+  "from-pink-500 via-rose-500 to-red-600",
+  "from-purple-500 via-fuchsia-500 to-pink-500",
+] as const;
+
+function getChatAvatarGradient(title: string) {
+  let hash = 0;
+  for (const character of title) {
+    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  }
+  return CHAT_AVATAR_GRADIENTS[hash % CHAT_AVATAR_GRADIENTS.length];
+}
+
 interface ChatSidebarItemProps {
   item: GetChatHistoryResponse["chats"][0];
 }
@@ -55,6 +72,7 @@ export const ChatSidebarItem = forwardRef<HTMLLIElement, ChatSidebarItemProps>(
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const avatar = item.avatar?.trim();
     const initials = getChatAvatarInitials(item.title);
+    const avatarGradient = getChatAvatarGradient(item.title);
     const latestMessage = item.lastMessage?.trim() || item.description?.trim();
 
     const isHistoryKey = useCallback(
@@ -205,7 +223,8 @@ export const ChatSidebarItem = forwardRef<HTMLLIElement, ChatSidebarItemProps>(
                 >
                   <CustomSidebarMenuAvatar
                     className={cn(
-                      "flex items-center justify-center overflow-hidden bg-muted text-xs font-semibold text-muted-foreground",
+                      "flex items-center justify-center overflow-hidden bg-linear-to-br text-xs font-semibold text-white",
+                      avatarGradient,
                     )}
                   >
                     {avatar ? (
