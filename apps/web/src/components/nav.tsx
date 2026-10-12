@@ -4,7 +4,7 @@ import { UserButton } from "@/components/auth/user/user-button";
 import { navItems } from "@/consts/nav";
 import { useSession } from "@/lib/auth-client";
 import { Phone, User } from "lucide-react";
-import { Suspense, useId } from "react";
+import { Suspense, useEffect, useId, useState } from "react";
 import { EnhancedLink } from "./enhanced-link";
 import { EnhancedLinkSpinner } from "./enhanced-link-spinner";
 import GradualBlur from "./gradual-blur";
@@ -83,19 +83,58 @@ export function Nav() {
 function AuthLink() {
   const { data: session, isPending } = useSession();
   const signedIn = session?.user;
+  const [canCreateLocalAccount, setCanCreateLocalAccount] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void fetch("/api/instance/info", { credentials: "same-origin" })
+      .then((response) =>
+        response.ok
+          ? (response.json() as Promise<{
+              localAuth?: boolean;
+              signupEnabled?: boolean;
+            }>)
+          : null,
+      )
+      .then((info) => {
+        if (active) {
+          setCanCreateLocalAccount(
+            Boolean(info?.localAuth && info.signupEnabled),
+          );
+        }
+      })
+      .catch(() => {
+        if (active) setCanCreateLocalAccount(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [signedIn?.id]);
 
   if (isPending) return <Spinner />;
 
   if (signedIn) return <UserButton variant="ghost" />;
 
   return (
-    <EnhancedLink
-      href="/auth/sign-in"
-      buttonProps={{ variant: "text", size: "text" }}
-    >
-      <User className="size-5" />
-      Sign in
-      <EnhancedLinkSpinner />
-    </EnhancedLink>
+    <div className="flex items-center justify-end gap-2">
+      {canCreateLocalAccount && (
+        <EnhancedLink
+          href="/auth/sign-up"
+          buttonProps={{ variant: "text", size: "text" }}
+        >
+          Create account
+          <EnhancedLinkSpinner />
+        </EnhancedLink>
+      )}
+      <EnhancedLink
+        href="/auth/sign-in"
+        buttonProps={{ variant: "text", size: "text" }}
+      >
+        <User className="size-5" />
+        Sign in
+        <EnhancedLinkSpinner />
+      </EnhancedLink>
+    </div>
   );
 }

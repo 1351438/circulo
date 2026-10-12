@@ -1,3 +1,4 @@
+import { DesktopWindowToolbar } from "@/components/desktop-window-toolbar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { env } from "@/lib/env";
 import { isBillingEnabled } from "@/lib/environment";
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       )}
     >
       <body className={cn("font-sans", "antialiased")}>
+        <DesktopWindowToolbar />
         <ThemeProvider>
           {isBillingEnabled ? (
             <AutumnProvider

@@ -482,9 +482,98 @@
 }
 
 html[data-circulo-desktop="true"] {
+  --circulo-desktop-toolbar-height: 40px;
   --circulo-content-height: calc(
     100dvh - var(--circulo-desktop-toolbar-height, 40px)
   );
+}
+
+#circulo-desktop-window-toolbar {
+  display: none;
+}
+
+html[data-circulo-desktop="true"] #circulo-desktop-window-toolbar {
+  align-items: center;
+  background: var(--background, #18181b);
+  box-sizing: border-box;
+  color: var(--muted-foreground, #a1a1aa);
+  display: flex;
+  flex: 0 0 var(--circulo-desktop-toolbar-height, 40px);
+  height: var(--circulo-desktop-toolbar-height, 40px);
+  padding: 0 138px 0 8px;
+  position: relative;
+  user-select: none;
+  width: 100%;
+  z-index: 2147483647;
+  -webkit-app-region: no-drag;
+  -webkit-user-select: none;
+}
+
+html[data-circulo-desktop="true"] .circulo-desktop-window-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+}
+
+html[data-circulo-desktop="true"] .circulo-desktop-window-drag-area {
+  align-self: stretch;
+  cursor: move;
+  flex: 1 1 auto;
+  min-width: 24px;
+  -webkit-app-region: drag;
+}
+
+html[data-circulo-desktop="true"]
+  #circulo-desktop-window-toolbar[data-control-side="left"] {
+  padding: 0 8px 0 82px;
+}
+
+html[data-circulo-desktop="true"]
+  #circulo-desktop-window-toolbar[data-control-side="left"]
+  .circulo-desktop-window-actions {
+  order: 1;
+}
+
+html[data-circulo-desktop="true"]
+  #circulo-desktop-window-toolbar[data-control-side="left"]
+  .circulo-desktop-window-drag-area {
+  order: 0;
+}
+
+html[data-circulo-desktop="true"] .circulo-desktop-window-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--muted-foreground, #a1a1aa);
+  cursor: pointer;
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  padding: 0;
+  width: 30px;
+  -webkit-app-region: no-drag;
+}
+
+html[data-circulo-desktop="true"]
+  .circulo-desktop-window-button:hover:not(:disabled) {
+  background: var(--accent, #27272a);
+  color: var(--accent-foreground, #f4f4f5);
+}
+
+html[data-circulo-desktop="true"] .circulo-desktop-window-button:focus-visible {
+  outline: 2px solid var(--ring, #71717a);
+  outline-offset: -2px;
+}
+
+html[data-circulo-desktop="true"]
+  .circulo-desktop-window-button:active:not(:disabled) {
+  background: var(--accent, #27272a);
+}
+
+html[data-circulo-desktop="true"] .circulo-desktop-window-button:disabled {
+  color: color-mix(in srgb, var(--muted-foreground, #a1a1aa) 45%, transparent);
+  cursor: default;
 }
 
 html[data-circulo-desktop="true"] .h-dvh:not(.fixed),
