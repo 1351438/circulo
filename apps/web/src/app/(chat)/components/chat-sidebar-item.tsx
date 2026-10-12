@@ -29,15 +29,6 @@ import { forwardRef, useCallback, useState } from "react";
 import { toast } from "sonner";
 import { type Arguments, type Key, useSWRConfig } from "swr";
 
-const CHAT_AVATAR_GRADIENTS = [
-  "from-indigo-500 via-violet-500 to-fuchsia-500",
-  "from-cyan-500 via-sky-500 to-blue-600",
-  "from-emerald-500 via-teal-500 to-cyan-600",
-  "from-amber-400 via-orange-500 to-rose-500",
-  "from-pink-500 via-rose-500 to-red-600",
-  "from-purple-500 via-fuchsia-500 to-pink-500",
-] as const;
-
 function getChatAvatarInitials(title: string) {
   const words = title.trim().split(/\s+/).filter(Boolean);
 
@@ -48,16 +39,6 @@ function getChatAvatarInitials(title: string) {
     .map((word) => word[0])
     .join("")
     .toUpperCase();
-}
-
-function getChatAvatarGradient(title: string) {
-  let hash = 0;
-
-  for (const character of title) {
-    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
-  }
-
-  return CHAT_AVATAR_GRADIENTS[hash % CHAT_AVATAR_GRADIENTS.length];
 }
 
 interface ChatSidebarItemProps {
@@ -224,9 +205,7 @@ export const ChatSidebarItem = forwardRef<HTMLLIElement, ChatSidebarItemProps>(
                 >
                   <CustomSidebarMenuAvatar
                     className={cn(
-                      "flex items-center justify-center overflow-hidden text-xs font-semibold text-white shadow-inner",
-                      !avatar &&
-                        `bg-linear-to-br ${getChatAvatarGradient(item.title)}`,
+                      "flex items-center justify-center overflow-hidden bg-muted text-xs font-semibold text-muted-foreground",
                     )}
                   >
                     {avatar ? (

@@ -1,6 +1,7 @@
 import { createRouter } from "@/lib/create-app";
 import { env, isTruthy } from "@/lib/env";
 import { isServiceReady, type ReadinessState } from "@/lib/readiness";
+import { getRedisClient } from "@/lib/redis";
 import {
   hasInvalidTrustedProxy,
   parseTrustedProxyIps,
@@ -12,7 +13,6 @@ import {
   StorageSharedKeyCredential,
 } from "@azure/storage-blob";
 import { getDb } from "@circulo-ai/db";
-import { createRedis } from "@circulo-ai/redis";
 import { sql } from "drizzle-orm";
 
 const router = createRouter();
@@ -45,9 +45,9 @@ router.get("/health/ready", async (c) => {
     checks.database = "failed";
   }
 
-  if (env.REDIS_URL) {
+  const redis = getRedisClient();
+  if (redis) {
     try {
-      const redis = createRedis({ url: env.REDIS_URL, namespace: "health" });
       await withTimeout(redis.ping(), 2_000);
       checks.redis = "ok";
     } catch {

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Offline-capable Electron shell for Circulo",
+  "author": "Circulo AI",
   "main": "src/main.cjs",
   "scripts": {
     "dev": "electron .",
@@ -38,6 +39,7 @@
       }
     ],
     "win": {
+      "icon": "../web/src/app/favicon.ico",
       "target": [
         "nsis",
         "portable"
@@ -55,13 +57,7 @@
         "AppImage",
         "deb"
       ]
-    },
-    "publish": [
-      {
-        "provider": "generic",
-        "url": "https://updates.example.com/circulo/"
-      }
-    ]
+    }
   },
   "devDependencies": {
     "electron": "^44.4.3",

@@ -151,6 +151,41 @@ function generateTitleFromUserMessages(messages: ChatMessage[]) {
 }
 
 router.get(
+  "/chat/:id",
+  requireAuth,
+  zValidator("param", chatIdParamsSchema),
+  async (c) => {
+    const { id } = c.req.valid("param");
+    const { user, activeOrgId } = c.var;
+    const organizationId =
+      activeOrgId ?? (await getActiveOrganizationId(c.req.raw));
+    if (!organizationId) throw new ForbiddenError("No active organization");
+
+    const chat = await db.query.chat.findFirst({
+      where: and(
+        eq(chatTable.id, id),
+        eq(chatTable.organizationId, organizationId),
+        eq(chatTable.isDeleted, false),
+      ),
+    });
+    if (!chat || !(await c.di.ChatMemberRepository.isMember(user!.id, id))) {
+      throw new ForbiddenError("Chat not found");
+    }
+
+    const page = await messageRepo.findWithCursor(id, {
+      direction: "before",
+      limit: 50,
+    });
+    return c.json({
+      chat,
+      messages: convertToUIMessages(page.items),
+      hasMore: page.hasMore,
+      nextCursor: page.nextCursor,
+    });
+  },
+);
+
+router.get(
   "/chat/:id/messages",
   requireAuth,
   zValidator("param", chatIdParamsSchema),

@@ -4,35 +4,43 @@ import { notFound } from "next/navigation";
 import { Chat } from "@/components/chat";
 import { DataStreamHandler } from "@/components/data-stream-handler";
 import type { ChatMessagePagination } from "@/hooks/api/chats/use-message-pagination";
-import { convertToUIMessages } from "@/lib/utils";
-import {
-  chatMemberRepo,
-  chatRepo,
-  messageRepo,
-} from "@circulo-ai/db/repositories";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-async function getRequestUserId(): Promise<string | null> {
+async function getApiBaseUrl(): Promise<string> {
+  return (
+    process.env.SERVER_API_URL ??
+    process.env.NEXT_PUBLIC_BETTER_AUTH_URL ??
+    "http://localhost:3002"
+  );
+}
+
+type ChatPageData = {
+  chat: {
+    id: string;
+    title: string;
+    visibility: "private" | "public";
+    isDeleted: boolean;
+  };
+  messages: Awaited<
+    ReturnType<typeof import("@/lib/utils").convertToUIMessages>
+  >;
+  hasMore: boolean;
+  nextCursor: string | null;
+};
+
+async function getChatPageData(id: string): Promise<ChatPageData | null> {
   const requestHeaders = await headers();
   const cookie = requestHeaders.get("cookie");
   if (!cookie) return null;
-
-  const apiBaseUrl =
-    process.env.SERVER_API_URL ??
-    process.env.NEXT_PUBLIC_BETTER_AUTH_URL ??
-    "http://localhost:3002";
   try {
-    const response = await fetch(`${apiBaseUrl}/api/auth/get-session`, {
+    const response = await fetch(`${await getApiBaseUrl()}/api/chat/${id}`, {
       headers: { cookie },
       cache: "no-store",
     });
     if (!response.ok) return null;
-    const session = (await response.json()) as {
-      user?: { id?: string } | null;
-    } | null;
-    return session?.user?.id ?? null;
+    return (await response.json()) as ChatPageData;
   } catch {
     return null;
   }
@@ -41,25 +49,12 @@ async function getRequestUserId(): Promise<string | null> {
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const { id } = params;
-  const userId = await getRequestUserId();
-  if (!userId || !(await chatMemberRepo.isMember(userId, id))) {
-    notFound();
-  }
-  const chat = await chatRepo.findById(id);
+  const data = await getChatPageData(id);
+  if (!data || data.chat.isDeleted) notFound();
 
-  if (!chat || chat.isDeleted) {
-    notFound();
-  }
-
-  const messagePage = await messageRepo.findWithCursor(id, {
-    direction: "before",
-    limit: 50,
-  });
-
-  const uiMessages = convertToUIMessages(messagePage.items);
   const messagePagination: ChatMessagePagination = {
-    cursor: messagePage.nextCursor,
-    hasMore: messagePage.hasMore,
+    cursor: data.nextCursor ?? undefined,
+    hasMore: data.hasMore,
   };
 
   const cookieStore = await cookies();
@@ -69,10 +64,10 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     return (
       <>
         <Chat
-          id={chat.id}
-          initialMessages={uiMessages}
+          id={data.chat.id}
+          initialMessages={data.messages}
           initialMessagePagination={messagePagination}
-          initialVisibilityType={chat.visibility}
+          initialVisibilityType={data.chat.visibility}
           isReadonly={false}
         />
         <DataStreamHandler />
@@ -83,11 +78,11 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   return (
     <>
       <Chat
-        id={chat.id}
+        id={data.chat.id}
         initialChatModel={chatModelFromCookie.value}
-        initialMessages={uiMessages}
+        initialMessages={data.messages}
         initialMessagePagination={messagePagination}
-        initialVisibilityType={chat.visibility}
+        initialVisibilityType={data.chat.visibility}
         isReadonly={false}
       />
       <DataStreamHandler />

@@ -55,8 +55,6 @@ const app = createApp();
 const IS_DEVELOPMENT = env.NODE_ENV === "development";
 const SHOULD_APPLY_RATE_LIMITING =
   env.NODE_ENV === "production" && isCloudRuntime();
-const OPENAPI_PATH = "/openapi.json";
-
 // Middlewares (register before routes)
 app.use("*", logger());
 app.use("*", requestId());

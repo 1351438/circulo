@@ -1,11 +1,8 @@
 import { Chat } from "@/domain/chat/chat";
 import { ChatAgentLink } from "@/domain/chat/chat-agent-link";
 import { Message } from "@/domain/message/message";
-import type { DrizzleChatAgentLinkRepository } from "@/infrastructure/drizzle/chat-agent-link-repository";
-import type { DrizzleChatMemberRepository } from "@/infrastructure/drizzle/chat-member-repository";
-import type { DrizzleChatRepository } from "@/infrastructure/drizzle/chat-repository";
-import type { DrizzleMessageRepository } from "@/infrastructure/drizzle/message-repository";
-import type { DrizzleOrganizationMemberRepository } from "@/infrastructure/drizzle/organization-member-repository";
+import { createDrizzleRepositories } from "@/infrastructure/drizzle/repository-factory";
+import type { DbInstance } from "@circulo-ai/db";
 import {
   Guard,
   Identifier,
@@ -39,12 +36,7 @@ export class CreateChatWithMessage implements UseCase<
   CreateChatWithMessageOutput
 > {
   constructor(
-    private readonly chats: DrizzleChatRepository,
-    private readonly chatMembers: DrizzleChatMemberRepository,
-    private readonly messages: DrizzleMessageRepository,
-    private readonly links: DrizzleChatAgentLinkRepository,
-    private readonly members: DrizzleOrganizationMemberRepository,
-    private readonly uow: UnitOfWork,
+    private readonly uow: UnitOfWork<{ client: DbInstance }>,
     private readonly publisher: DomainEventPublisher,
   ) {}
 
@@ -69,8 +61,12 @@ export class CreateChatWithMessage implements UseCase<
       if (!check.succeeded) return Result.fail(check.message);
     }
 
-    return this.uow.transaction(async () => {
-      const membership = await this.members.findByUserAndOrg(
+    return this.uow.transaction(async (scope) => {
+      // Repositories used inside the unit of work must share its transaction
+      // client. Reusing the request-scoped repositories here bypasses the
+      // transaction and deadlocks single-connection databases such as PGlite.
+      const repositories = createDrizzleRepositories(scope.client);
+      const membership = await repositories.organizationMember.findByUserAndOrg(
         input.creatorId,
         input.organizationId,
       );
@@ -85,12 +81,12 @@ export class CreateChatWithMessage implements UseCase<
         createdAt: new Date(),
       });
 
-      await this.chats.save(chat);
-      await this.chatMembers.createOwner(
+      await repositories.chat.save(chat);
+      await repositories.chatMember.createOwner(
         chat.aggregateId.toString(),
         input.creatorId,
       );
-      await this.messages.save(
+      await repositories.message.save(
         new Message({
           id: Identifier.from(input.messageId),
           chatId: chat.aggregateId,
@@ -103,7 +99,7 @@ export class CreateChatWithMessage implements UseCase<
       );
 
       for (const agentId of input.agentIds) {
-        await this.links.save(
+        await repositories.chatAgentLink.save(
           new ChatAgentLink({
             id: Identifier.create(),
             chatId: chat.aggregateId,

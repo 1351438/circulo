@@ -249,6 +249,24 @@ function startLocalRuntime() {
 
 function configureAutoUpdates() {
   if (!app.isPackaged) return;
+  const updateUrl = process.env.CIRCULO_UPDATE_URL?.trim();
+  if (!updateUrl) {
+    updateStatus = "unconfigured";
+    console.info("[desktop] auto-update feed is not configured");
+    return;
+  }
+
+  try {
+    const parsedUpdateUrl = new URL(updateUrl);
+    if (parsedUpdateUrl.protocol !== "https:") {
+      throw new Error("CIRCULO_UPDATE_URL must use HTTPS");
+    }
+  } catch (error) {
+    updateStatus = "error";
+    console.error("[desktop] auto-update feed URL is invalid", error);
+    return;
+  }
+
   try {
     ({ autoUpdater } = require("electron-updater"));
     autoUpdater.autoDownload = false;
@@ -267,12 +285,7 @@ function configureAutoUpdates() {
           mainWindow.webContents.send("circulo:update-status", { event, info });
       });
     }
-    if (process.env.CIRCULO_UPDATE_URL) {
-      autoUpdater.setFeedURL({
-        provider: "generic",
-        url: process.env.CIRCULO_UPDATE_URL,
-      });
-    }
+    autoUpdater.setFeedURL({ provider: "generic", url: updateUrl });
     void autoUpdater.checkForUpdates().catch((error) => {
       updateStatus = "error";
       console.error("[desktop] update check failed", error);
@@ -366,15 +379,29 @@ ipcMain.handle("circulo:runtime-info", () => ({
   updateStatus,
 }));
 ipcMain.handle("circulo:navigation-state", () => ({
-  canGoBack: Boolean(mainWindow?.webContents.canGoBack()),
-  canGoForward: Boolean(mainWindow?.webContents.canGoForward()),
+  canGoBack: Boolean(mainWindow?.webContents.navigationHistory.canGoBack()),
+  canGoForward: Boolean(
+    mainWindow?.webContents.navigationHistory.canGoForward(),
+  ),
 }));
+ipcMain.on("circulo:titlebar-theme", (event, theme) => {
+  if (event.sender !== mainWindow?.webContents) return;
+  if (theme !== "dark" && theme !== "light") return;
+  if (typeof mainWindow.setTitleBarOverlay !== "function") return;
+
+  mainWindow.setTitleBarOverlay({
+    color: theme === "dark" ? "#0d0d0d" : "#ffffff",
+    symbolColor: theme === "dark" ? "#a1a1aa" : "#71717a",
+    height: 40,
+  });
+});
 ipcMain.on("circulo:navigate-back", () => {
-  if (mainWindow?.webContents.canGoBack()) mainWindow.webContents.goBack();
+  if (mainWindow?.webContents.navigationHistory.canGoBack())
+    mainWindow.webContents.navigationHistory.goBack();
 });
 ipcMain.on("circulo:navigate-forward", () => {
-  if (mainWindow?.webContents.canGoForward())
-    mainWindow.webContents.goForward();
+  if (mainWindow?.webContents.navigationHistory.canGoForward())
+    mainWindow.webContents.navigationHistory.goForward();
 });
 ipcMain.handle("circulo:download-update", async () => {
   if (!autoUpdater) return { started: false };
@@ -404,8 +431,9 @@ if (hasSingleInstanceLock) {
       const sendNavigationState = () => {
         if (!mainWindow) return;
         mainWindow.webContents.send("circulo:navigation-state", {
-          canGoBack: mainWindow.webContents.canGoBack(),
-          canGoForward: mainWindow.webContents.canGoForward(),
+          canGoBack: mainWindow.webContents.navigationHistory.canGoBack(),
+          canGoForward:
+            mainWindow.webContents.navigationHistory.canGoForward(),
         });
       };
       mainWindow.webContents.on("did-navigate", sendNavigationState);

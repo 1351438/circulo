@@ -19,9 +19,9 @@ import { PreviewMessage, ThinkingMessage } from "./message";
 function ActivityDots() {
   return (
     <span aria-hidden="true" className="flex items-end gap-0.5">
-      <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.2s]" />
-      <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.1s]" />
-      <span className="size-1.5 animate-bounce rounded-full bg-current" />
+      <span className="size-1.5 rounded-full bg-current [animation-delay:-0.2s] motion-safe:animate-pulse" />
+      <span className="size-1.5 rounded-full bg-current [animation-delay:-0.1s] motion-safe:animate-pulse" />
+      <span className="size-1.5 rounded-full bg-current motion-safe:animate-pulse" />
     </span>
   );
 }

@@ -241,11 +241,6 @@ export function buildRootProvider(): ServiceProvider {
 
   services.addScoped(DI_TOKENS.CreateChatWithMessageUseCase, (resolver) => {
     return new CreateChatWithMessage(
-      resolver.resolve(DI_TOKENS.ChatRepository),
-      resolver.resolve(DI_TOKENS.ChatMemberRepository),
-      resolver.resolve(DI_TOKENS.MessageRepository),
-      resolver.resolve(DI_TOKENS.ChatAgentLinkRepository),
-      resolver.resolve(DI_TOKENS.OrganizationMemberRepository),
       resolver.resolve(DI_TOKENS.UnitOfWork),
       resolver.resolve(DI_TOKENS.DomainEventPublisher),
     );
@@ -326,10 +321,8 @@ export function buildRootProvider(): ServiceProvider {
   });
 
   services.addScoped(DI_TOKENS.PostMessageUseCase, (resolver) => {
-    const chats = resolver.resolve(DI_TOKENS.ChatRepository);
-    const messages = resolver.resolve(DI_TOKENS.MessageRepository);
     const uow = resolver.resolve(DI_TOKENS.UnitOfWork);
-    return new PostMessage(chats, messages, uow);
+    return new PostMessage(uow);
   });
 
   services.addScoped(DI_TOKENS.CreateArtifactUseCase, (resolver) => {

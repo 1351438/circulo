@@ -39,10 +39,11 @@ bun run desktop:package
 The build produces Windows NSIS/portable, macOS DMG/ZIP, and Linux
 AppImage/DEB artifacts under `apps/desktop/dist`. The packaged application
 contains the Node-compatible API bundle, Next standalone runtime, PGlite
-migrations, and local storage defaults. Electron Builder's generic update
-provider is configured in `apps/desktop/package.json`; use
-`CIRCULO_UPDATE_URL` or replace the publish URL for the release environment.
-Code-signing secrets belong in CI and are not committed.
+migrations, and local storage defaults. Packaged builds check for updates only
+when `CIRCULO_UPDATE_URL` points to an HTTPS generic update feed containing the
+platform artifacts and metadata. Configure that variable in the release
+environment; development builds do not check for updates. Code-signing secrets
+belong in CI and are not committed.
 
 ## Cloud pairing
 

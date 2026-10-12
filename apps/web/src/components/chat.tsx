@@ -157,229 +157,236 @@ export function Chat({
     [workflowRunStorageKey],
   );
 
-  const { messages, setMessages, sendMessage, status, stop, regenerate } =
-    useChat<ChatMessage>({
-      resume: !!activeWorkflowRunId,
-      id,
-      messages: initialMessages,
-      generateId: generateUUID,
+  const {
+    messages,
+    setMessages,
+    sendMessage,
+    status,
+    stop,
+    regenerate,
+    clearError,
+  } = useChat<ChatMessage>({
+    resume: !!activeWorkflowRunId,
+    id,
+    messages: initialMessages,
+    generateId: generateUUID,
 
-      transport: new DefaultChatTransport<ChatMessage>({
-        api: "/api/chat",
-        fetch: chatFetch,
+    transport: new DefaultChatTransport<ChatMessage>({
+      api: "/api/chat",
+      fetch: chatFetch,
 
-        prepareSendMessagesRequest: (config) => {
-          const message = config.messages.at(-1);
-          if (!message) {
-            throw new Error("No message to send");
-          }
+      prepareSendMessagesRequest: (config) => {
+        const message = config.messages.at(-1);
+        if (!message) {
+          throw new Error("No message to send");
+        }
 
-          return {
-            ...config,
-            body: {
-              ...config.body,
-              id: config.id,
-              message: {
-                ...message,
-                id: message.id ?? generateUUID(),
-              },
-              visibility: visibilityType,
-              agentIds: [],
-              mentions: extractPromptMentions(
-                message.parts
-                  ?.filter((part) => part.type === "text")
-                  .map((part) => part.text)
-                  .join("") ?? "",
-              ),
+        return {
+          ...config,
+          body: {
+            ...config.body,
+            id: config.id,
+            message: {
+              ...message,
+              id: message.id ?? generateUUID(),
             },
-          };
-        },
-
-        prepareReconnectToStreamRequest: ({ api, ...rest }) => {
-          const workflowRunId =
-            localStorage.getItem(workflowRunStorageKey) ?? activeWorkflowRunId;
-          if (!workflowRunId) {
-            throw new Error("No active workflow run ID found");
-          }
-          return {
-            ...rest,
-            api: `/api/chat/${encodeURIComponent(workflowRunId)}/stream`,
-          };
-        },
-      }),
-
-      onData: (dataPart) => {
-        // Only artifact parts belong in the artifact stream queue. Workflow,
-        // usage, and message-control events are handled below or by the chat
-        // message stream and must not cause artifact-store writes.
-        if (ARTIFACT_STREAM_PART_TYPES.has(dataPart.type)) {
-          setDataStream((ds) => [...ds, dataPart]);
-        }
-
-        // Handle different data types
-        switch (dataPart.type) {
-          case "data-usage":
-            setUsage(dataPart.data);
-            break;
-
-          case "data-workflowStarted":
-            setWorkflowStatus({
-              isRunning: true,
-              currentPhase: "started",
-              progress: 0,
-            });
-            break;
-
-          case "data-workflowStepStarted":
-            setWorkflowStatus((prev) => ({
-              ...prev,
-              isRunning: true,
-              currentPhase: `step:${dataPart.data.stepName}`,
-            }));
-            break;
-
-          case "data-workflowStepCompleted":
-            setWorkflowStatus((prev) => ({
-              ...prev,
-              currentPhase: `finished:${dataPart.data.stepName}`,
-            }));
-            break;
-
-          case "data-workflowClassification":
-            setWorkflowStatus((prev) => ({
-              ...prev,
-              currentPhase: "classified",
-              progress: 15,
-            }));
-            break;
-
-          case "data-workflowPlan":
-            setWorkflowStatus((prev) => ({
-              ...prev,
-              currentPhase: "planned",
-              progress: 25,
-            }));
-            break;
-
-          case "data-workflowAgentStarted":
-            setWorkflowStatus((prev) => ({
-              ...prev,
-              currentPhase: `executing:${dataPart.data.agentName}`,
-            }));
-            break;
-
-          case "data-workflowAgentProgress":
-            break;
-
-          case "data-workflowAgentCompleted":
-            break;
-
-          case "data-workflowAggregated":
-            setWorkflowStatus((prev) => ({
-              ...prev,
-              currentPhase: "aggregated",
-              progress: 95,
-            }));
-            break;
-
-          case "data-workflowCompleted":
-            setArtifact((currentArtifact) => {
-              if (currentArtifact.status !== "streaming") {
-                return currentArtifact;
-              }
-
-              return {
-                ...currentArtifact,
-                status: "idle",
-                error:
-                  dataPart.data.success === false
-                    ? "The workflow ended before the artifact finished generating."
-                    : undefined,
-              };
-            });
-            setWorkflowStatus({
-              isRunning: false,
-              currentPhase: "completed",
-              progress: 100,
-            });
-            handleChatEnd();
-            break;
-          case "data-workflowPaused":
-            setWorkflowStatus({
-              isRunning: true,
-              currentPhase: "awaiting approval",
-            });
-            break;
-
-          case "data-workflowError":
-            setArtifact((currentArtifact) => {
-              if (
-                currentArtifact.status !== "streaming" &&
-                currentArtifact.documentId === "init"
-              ) {
-                return currentArtifact;
-              }
-
-              return {
-                ...currentArtifact,
-                status: "idle",
-                error: dataPart.data.error,
-              };
-            });
-            setWorkflowStatus({
-              isRunning: false,
-              currentPhase: "error",
-            });
-            console.error("Workflow error:", dataPart.data);
-            toast({
-              type: "error",
-              description: dataPart.data.error,
-            });
-            handleChatEnd();
-            break;
-        }
+            visibility: visibilityType,
+            agentIds: [],
+            mentions: extractPromptMentions(
+              message.parts
+                ?.filter((part) => part.type === "text")
+                .map((part) => part.text)
+                .join("") ?? "",
+            ),
+          },
+        };
       },
 
-      onFinish: async () => {
-        await mutate(`/api/chat/${id}/resources`);
-        mutate(unstable_serialize(getChatHistoryPaginationKey));
-        await clearCachePattern(/\/api\/conversations.*/);
-        await globalMutate(
-          (key) =>
-            typeof key === "string" && key.startsWith("/api/conversations"),
-        );
+      prepareReconnectToStreamRequest: ({ api, ...rest }) => {
+        const workflowRunId =
+          localStorage.getItem(workflowRunStorageKey) ?? activeWorkflowRunId;
+        if (!workflowRunId) {
+          throw new Error("No active workflow run ID found");
+        }
+        return {
+          ...rest,
+          api: `/api/chat/${encodeURIComponent(workflowRunId)}/stream`,
+        };
       },
+    }),
 
-      onError: (error) => {
-        console.error("Chat error:", error);
-        setArtifact((currentArtifact) => {
-          if (
-            currentArtifact.status !== "streaming" &&
-            currentArtifact.documentId === "init"
-          ) {
-            return currentArtifact;
-          }
+    onData: (dataPart) => {
+      // Only artifact parts belong in the artifact stream queue. Workflow,
+      // usage, and message-control events are handled below or by the chat
+      // message stream and must not cause artifact-store writes.
+      if (ARTIFACT_STREAM_PART_TYPES.has(dataPart.type)) {
+        setDataStream((ds) => [...ds, dataPart]);
+      }
 
-          return {
-            ...currentArtifact,
-            status: "idle",
-            error:
-              error instanceof ApiRequestError
-                ? error.message
-                : "The response stream ended unexpectedly.",
-          };
-        });
-        handleChatEnd();
+      // Handle different data types
+      switch (dataPart.type) {
+        case "data-usage":
+          setUsage(dataPart.data);
+          break;
 
-        toast({
-          type: "error",
-          description:
+        case "data-workflowStarted":
+          setWorkflowStatus({
+            isRunning: true,
+            currentPhase: "started",
+            progress: 0,
+          });
+          break;
+
+        case "data-workflowStepStarted":
+          setWorkflowStatus((prev) => ({
+            ...prev,
+            isRunning: true,
+            currentPhase: `step:${dataPart.data.stepName}`,
+          }));
+          break;
+
+        case "data-workflowStepCompleted":
+          setWorkflowStatus((prev) => ({
+            ...prev,
+            currentPhase: `finished:${dataPart.data.stepName}`,
+          }));
+          break;
+
+        case "data-workflowClassification":
+          setWorkflowStatus((prev) => ({
+            ...prev,
+            currentPhase: "classified",
+            progress: 15,
+          }));
+          break;
+
+        case "data-workflowPlan":
+          setWorkflowStatus((prev) => ({
+            ...prev,
+            currentPhase: "planned",
+            progress: 25,
+          }));
+          break;
+
+        case "data-workflowAgentStarted":
+          setWorkflowStatus((prev) => ({
+            ...prev,
+            currentPhase: `executing:${dataPart.data.agentName}`,
+          }));
+          break;
+
+        case "data-workflowAgentProgress":
+          break;
+
+        case "data-workflowAgentCompleted":
+          break;
+
+        case "data-workflowAggregated":
+          setWorkflowStatus((prev) => ({
+            ...prev,
+            currentPhase: "aggregated",
+            progress: 95,
+          }));
+          break;
+
+        case "data-workflowCompleted":
+          setArtifact((currentArtifact) => {
+            if (currentArtifact.status !== "streaming") {
+              return currentArtifact;
+            }
+
+            return {
+              ...currentArtifact,
+              status: "idle",
+              error:
+                dataPart.data.success === false
+                  ? "The workflow ended before the artifact finished generating."
+                  : undefined,
+            };
+          });
+          setWorkflowStatus({
+            isRunning: false,
+            currentPhase: "completed",
+            progress: 100,
+          });
+          handleChatEnd();
+          break;
+        case "data-workflowPaused":
+          setWorkflowStatus({
+            isRunning: true,
+            currentPhase: "awaiting approval",
+          });
+          break;
+
+        case "data-workflowError":
+          setArtifact((currentArtifact) => {
+            if (
+              currentArtifact.status !== "streaming" &&
+              currentArtifact.documentId === "init"
+            ) {
+              return currentArtifact;
+            }
+
+            return {
+              ...currentArtifact,
+              status: "idle",
+              error: dataPart.data.error,
+            };
+          });
+          setWorkflowStatus({
+            isRunning: false,
+            currentPhase: "error",
+          });
+          console.error("Workflow error:", dataPart.data);
+          toast({
+            type: "error",
+            description: dataPart.data.error,
+          });
+          handleChatEnd();
+          break;
+      }
+    },
+
+    onFinish: async () => {
+      await mutate(`/api/chat/${id}/resources`);
+      mutate(unstable_serialize(getChatHistoryPaginationKey));
+      await clearCachePattern(/\/api\/conversations.*/);
+      await globalMutate(
+        (key) =>
+          typeof key === "string" && key.startsWith("/api/conversations"),
+      );
+    },
+
+    onError: (error) => {
+      console.error("Chat error:", error);
+      setArtifact((currentArtifact) => {
+        if (
+          currentArtifact.status !== "streaming" &&
+          currentArtifact.documentId === "init"
+        ) {
+          return currentArtifact;
+        }
+
+        return {
+          ...currentArtifact,
+          status: "idle",
+          error:
             error instanceof ApiRequestError
               ? error.message
-              : "An unexpected error occurred",
-        });
-      },
-    });
+              : "The response stream ended unexpectedly.",
+        };
+      });
+      handleChatEnd();
+
+      toast({
+        type: "error",
+        description:
+          error instanceof ApiRequestError
+            ? error.message
+            : "An unexpected error occurred",
+      });
+    },
+  });
 
   const searchParams = useSearchParams();
   const query = searchParams.get("query");
@@ -444,6 +451,7 @@ export function Chat({
               messages={messages}
               selectedVisibilityType={visibilityType}
               sendMessage={sendMessage}
+              clearError={clearError}
               setAttachments={setAttachments}
               setInput={setInput}
               setMessages={setMessages}

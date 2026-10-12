@@ -88,6 +88,27 @@ async function requireWorkspaceManager(
   return true;
 }
 
+async function requireMcpManager(
+  userId: string,
+  organizationId: string,
+  apiKeyPermissions?: ApiKeyPermissions,
+) {
+  await requireOrganization(userId, organizationId);
+  if (
+    !(await hasPermissionForUser(
+      userId,
+      organizationId,
+      "mcp",
+      "manage",
+      apiKeyPermissions,
+    ))
+  ) {
+    throw new ForbiddenError(
+      "Only workspace managers can manage MCP integrations",
+    );
+  }
+}
+
 function activeChatIdsForUser(userId: string) {
   return db
     .select({ chatId: chatMember.chatId })
@@ -633,7 +654,7 @@ const linkSchema = z
 router.get("/automation/mcp", requireAuth, async (c) => {
   const organizationId = c.get("activeOrgId");
   if (!organizationId) throw new BadRequestError("No active organization");
-  await requireWorkspaceManager(
+  await requireMcpManager(
     c.var.user!.id,
     organizationId,
     c.var.apiKeyPermissions,
@@ -699,7 +720,7 @@ router.post(
     });
     if (!current) throw new NotFoundError("MCP integration not found");
     requireActiveOrganization(c, current.organizationId);
-    await requireWorkspaceManager(
+    await requireMcpManager(
       c.var.user!.id,
       current.organizationId,
       c.var.apiKeyPermissions,
@@ -738,7 +759,7 @@ router.post(
     });
     if (!current) throw new NotFoundError("MCP integration not found");
     requireActiveOrganization(c, current.organizationId);
-    await requireWorkspaceManager(
+    await requireMcpManager(
       c.var.user!.id,
       current.organizationId,
       c.var.apiKeyPermissions,
@@ -817,7 +838,7 @@ router.patch(
     });
     if (!current) throw new NotFoundError("MCP integration not found");
     requireActiveOrganization(c, current.organizationId);
-    await requireWorkspaceManager(
+    await requireMcpManager(
       c.var.user!.id,
       current.organizationId,
       c.var.apiKeyPermissions,

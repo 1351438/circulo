@@ -1,5 +1,9 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
+if (document.documentElement) {
+  document.documentElement.dataset.circuloDesktop = "true";
+}
+
 function createIcon(pathData) {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("aria-hidden", "true");
@@ -21,12 +25,16 @@ function installDesktopToolbar() {
 
   const toolbar = document.createElement("div");
   toolbar.id = "circulo-desktop-toolbar";
+  toolbar.setAttribute("aria-label", "Circulo window toolbar");
+  toolbar.setAttribute("role", "region");
+  toolbar.dataset.controlSide =
+    process.platform === "darwin" ? "left" : "right";
   toolbar.innerHTML = `
-    <div class="circulo-desktop-toolbar-brand">Circulo</div>
     <div class="circulo-desktop-toolbar-actions">
       <button type="button" data-circulo-navigation="back" aria-label="Go back" title="Go back"></button>
       <button type="button" data-circulo-navigation="forward" aria-label="Go forward" title="Go forward"></button>
     </div>
+    <div class="circulo-desktop-toolbar-drag-area" aria-hidden="true" title="Drag to move the window"></div>
   `;
 
   const back = toolbar.querySelector('[data-circulo-navigation="back"]');
@@ -46,44 +54,73 @@ function installDesktopToolbar() {
     body { margin: 0 !important; }
     #circulo-desktop-toolbar {
       align-items: center;
-      background: #18181b;
-      color: #a1a1aa;
+      background: var(--background, #18181b);
+      box-sizing: border-box;
+      color: var(--muted-foreground, #a1a1aa);
       display: flex;
       height: var(--circulo-desktop-toolbar-height);
       flex: 0 0 var(--circulo-desktop-toolbar-height);
-      justify-content: flex-start;
       position: relative;
       user-select: none;
       z-index: 2147483647;
-      -webkit-app-region: drag;
+      padding: 0 138px 0 8px;
+      -webkit-app-region: no-drag;
       -webkit-user-select: none;
     }
-    .circulo-desktop-toolbar-brand {
-      color: #e4e4e7;
-      font: 600 13px/1 system-ui, sans-serif;
-      letter-spacing: -0.01em;
-      margin: 0 16px 0 14px;
+    .circulo-desktop-toolbar-actions {
+      display: flex;
+      flex: 0 0 auto;
+      gap: 2px;
+      order: 0;
     }
-    .circulo-desktop-toolbar-actions { display: flex; gap: 2px; }
+    .circulo-desktop-toolbar-drag-area {
+      align-self: stretch;
+      cursor: move;
+      flex: 1 1 auto;
+      min-width: 24px;
+      -webkit-app-region: drag;
+    }
+    #circulo-desktop-toolbar[data-control-side="left"] {
+      padding: 0 8px 0 82px;
+    }
+    #circulo-desktop-toolbar[data-control-side="left"] .circulo-desktop-toolbar-drag-area {
+      order: 0;
+    }
+    #circulo-desktop-toolbar[data-control-side="left"] .circulo-desktop-toolbar-actions {
+      order: 1;
+    }
     .circulo-desktop-toolbar-actions button {
       align-items: center;
       background: transparent;
       border: 0;
       border-radius: 6px;
-      color: #a1a1aa;
+      color: var(--muted-foreground, #a1a1aa);
       display: inline-flex;
       height: 28px;
       justify-content: center;
       padding: 0;
       width: 30px;
+      cursor: pointer;
       -webkit-app-region: no-drag;
     }
-    .circulo-desktop-toolbar-actions button:hover:not(:disabled) { background: #27272a; color: #f4f4f5; }
-    .circulo-desktop-toolbar-actions button:focus-visible { outline: 2px solid #71717a; outline-offset: -2px; }
-    .circulo-desktop-toolbar-actions button:disabled { color: #52525b; cursor: default; }
+    .circulo-desktop-toolbar-actions button:hover:not(:disabled) { background: var(--accent, #27272a); color: var(--accent-foreground, #f4f4f5); }
+    .circulo-desktop-toolbar-actions button:focus-visible { outline: 2px solid var(--ring, #71717a); outline-offset: -2px; }
+    .circulo-desktop-toolbar-actions button:active:not(:disabled) { background: var(--accent, #27272a); }
+    .circulo-desktop-toolbar-actions button:disabled { color: color-mix(in srgb, var(--muted-foreground, #a1a1aa) 45%, transparent); cursor: default; }
     .circulo-desktop-toolbar-icon { height: 17px; width: 17px; }
   `;
   document.head.appendChild(style);
+  const syncTitleBarTheme = () =>
+    ipcRenderer.send(
+      "circulo:titlebar-theme",
+      document.documentElement.classList.contains("dark") ? "dark" : "light",
+    );
+  const themeObserver = new MutationObserver(syncTitleBarTheme);
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+  syncTitleBarTheme();
   // Insert before the app root so the page layout starts below the toolbar;
   // a fixed overlay would obscure full-height workspace surfaces.
   document.body.insertBefore(toolbar, document.body.firstChild);

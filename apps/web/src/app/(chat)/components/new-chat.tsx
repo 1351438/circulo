@@ -86,6 +86,7 @@ import {
   Bot,
   Check,
   CircleFadingArrowUp,
+  LoaderCircle,
   Mic,
   Paperclip,
   Pencil,
@@ -152,6 +153,11 @@ export function NewChat({ id }: NewChatProps) {
   const [inputText, setInputText] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isReadingAttachments, setIsReadingAttachments] = useState(false);
+  const submittingRef = useRef(false);
+  const pendingSubmissionRef = useRef<{
+    input: string;
+    attachments: Attachment[];
+  } | null>(null);
   const isMobile = useIsMobile();
   const { setOpenMobile } = useSidebar();
   const router = useRouter();
@@ -267,6 +273,7 @@ export function NewChat({ id }: NewChatProps) {
       }),
     }),
     onFinish: async () => {
+      pendingSubmissionRef.current = null;
       mutate(unstable_serialize(getChatHistoryPaginationKey));
       await clearCachePattern(/\/api\/conversations.*/);
       await globalMutate(
@@ -275,10 +282,32 @@ export function NewChat({ id }: NewChatProps) {
       );
       setSelectedAgentIds([]);
     },
+    onError: (error) => {
+      submittingRef.current = false;
+      const pendingSubmission = pendingSubmissionRef.current;
+      if (pendingSubmission) {
+        setInputText(pendingSubmission.input);
+        setAttachments(pendingSubmission.attachments);
+        pendingSubmissionRef.current = null;
+      }
+      toast.error("Your message could not be sent", {
+        description: error.message || "Check your connection and try again.",
+      });
+    },
   });
 
+  useEffect(() => {
+    if (status === "ready" || status === "error") {
+      submittingRef.current = false;
+    }
+  }, [status]);
+
   const handleSubmit = useCallback(() => {
-    if (status === "submitted" || status === "streaming") {
+    if (
+      submittingRef.current ||
+      status === "submitted" ||
+      status === "streaming"
+    ) {
       return;
     }
 
@@ -295,8 +324,10 @@ export function NewChat({ id }: NewChatProps) {
       return;
     }
     if (!text && attachments.length === 0) return;
+    submittingRef.current = true;
+    pendingSubmissionRef.current = { input: inputText, attachments };
     setInputText("");
-    sendMessage({
+    void sendMessage({
       role: "user",
       parts: [
         ...attachments.map((attachment) => ({
@@ -308,6 +339,18 @@ export function NewChat({ id }: NewChatProps) {
         })),
         ...(text ? [{ type: "text" as const, text }] : []),
       ],
+    }).catch((error: unknown) => {
+      submittingRef.current = false;
+      const pendingSubmission = pendingSubmissionRef.current;
+      if (pendingSubmission) {
+        setInputText(pendingSubmission.input);
+        setAttachments(pendingSubmission.attachments);
+        pendingSubmissionRef.current = null;
+      }
+      toast.error(
+        "Your message could not be sent",
+        error instanceof Error ? { description: error.message } : undefined,
+      );
     });
     uploadManager.resetAllUploadTasks();
     setAttachments([]);
@@ -519,12 +562,17 @@ export function NewChat({ id }: NewChatProps) {
                   </TooltipContent>
                 </Tooltip>
                 <InputGroupButton
-                  aria-label="Submit"
+                  aria-label={
+                    status === "submitted" || status === "streaming"
+                      ? "Sending message"
+                      : "Send message"
+                  }
                   size="icon-md"
                   variant="primary"
                   className="rounded-full"
                   onClick={handleSubmit}
                   disabled={
+                    submittingRef.current ||
                     status === "submitted" ||
                     status === "streaming" ||
                     voiceRecorder.isStarting ||
@@ -538,7 +586,11 @@ export function NewChat({ id }: NewChatProps) {
                     )
                   }
                 >
-                  <ArrowUp />
+                  {status === "submitted" || status === "streaming" ? (
+                    <LoaderCircle aria-hidden="true" className="animate-spin" />
+                  ) : (
+                    <ArrowUp />
+                  )}
                 </InputGroupButton>
               </InputGroupAddon>
             </CustomInputGroup>
@@ -645,8 +697,20 @@ const SelectableAgent = forwardRef<HTMLButtonElement, SelectableAgentProps>(
     const innerAgentRef = useRef<HTMLButtonElement>(null);
     const agentRef = useMergedRefs(ref, innerAgentRef);
     const animationLockRef = useRef(false);
+    const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+      null,
+    );
 
-    const [isTooltipOpen, setIsTooltipOpen] = useState(false); // TODO close after some time
+    const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+
+    useEffect(
+      () => () => {
+        if (feedbackTimeoutRef.current) {
+          clearTimeout(feedbackTimeoutRef.current);
+        }
+      },
+      [],
+    );
 
     const isSelected = useMemo(
       () => selectedAgentIds.includes(agent.id),
@@ -662,11 +726,15 @@ const SelectableAgent = forwardRef<HTMLButtonElement, SelectableAgentProps>(
             animationLockRef.current = true;
             agentElement.classList.add("animate-error");
             setIsTooltipOpen(true);
-            // TODO cleanup
-            setTimeout(() => {
+            if (feedbackTimeoutRef.current) {
+              clearTimeout(feedbackTimeoutRef.current);
+            }
+            feedbackTimeoutRef.current = setTimeout(() => {
               animationLockRef.current = false;
-              agentElement.classList.remove("animate-error");
-            }, 500);
+              agentRef.current?.classList.remove("animate-error");
+              setIsTooltipOpen(false);
+              feedbackTimeoutRef.current = null;
+            }, 1500);
           }
         } else
           setSelectedAgentIds((ids) =>

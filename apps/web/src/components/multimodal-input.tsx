@@ -49,6 +49,7 @@ function PureMultimodalInput({
   messages,
   setMessages,
   sendMessage,
+  clearError,
   className,
   selectedVisibilityType,
   usage,
@@ -63,12 +64,17 @@ function PureMultimodalInput({
   messages: UIMessage[];
   setMessages: UseChatHelpers<ChatMessage>["setMessages"];
   sendMessage: UseChatHelpers<ChatMessage>["sendMessage"];
+  clearError?: UseChatHelpers<ChatMessage>["clearError"];
   className?: string;
   selectedVisibilityType: VisibilityType;
   usage?: AppUsage;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const submittingRef = useRef(false);
+  const pendingSubmissionRef = useRef<{
+    input: string;
+    attachments: Attachment[];
+  } | null>(null);
   const { width } = useWindowSize();
 
   const adjustHeight = useCallback(() => {
@@ -110,10 +116,19 @@ function PureMultimodalInput({
   }, [input, setLocalStorageInput]);
 
   useEffect(() => {
-    if (status === "ready" || status === "error") {
+    if (status === "ready") {
       submittingRef.current = false;
+      pendingSubmissionRef.current = null;
+    } else if (status === "error") {
+      submittingRef.current = false;
+      const pendingSubmission = pendingSubmissionRef.current;
+      if (pendingSubmission) {
+        setInput(pendingSubmission.input);
+        setAttachments(pendingSubmission.attachments);
+        pendingSubmissionRef.current = null;
+      }
     }
-  }, [status]);
+  }, [setAttachments, setInput, status]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadManager = useUploadTaskManager({
@@ -253,13 +268,20 @@ function PureMultimodalInput({
   const submitForm = useCallback(() => {
     if (
       submittingRef.current ||
-      status !== "ready" ||
+      (status !== "ready" && status !== "error") ||
       uploadManager.hasUploadErrors ||
+      isReadingAttachments ||
+      uploadManager.uploadTasks.some((item) =>
+        ["queued", "preparing", "uploading"].includes(item.status),
+      ) ||
+      voiceRecorder.isRecording ||
       (!input.trim() && attachments.length === 0)
     ) {
       return;
     }
     submittingRef.current = true;
+    pendingSubmissionRef.current = { input, attachments };
+    if (status === "error") clearError?.();
     window.history.pushState({}, "", `/chat/${chatId}`);
 
     sendMessage({
@@ -300,6 +322,11 @@ function PureMultimodalInput({
     width,
     chatId,
     resetHeight,
+    clearError,
+    isReadingAttachments,
+    uploadManager.hasUploadErrors,
+    uploadManager.uploadTasks,
+    voiceRecorder.isRecording,
   ]);
 
   const handleFileChange = useCallback(
@@ -529,10 +556,13 @@ function PureMultimodalInput({
                 {/*/>*/}
               </PromptInputTools>
 
-              {status === "submitted" ? (
+              {status === "submitted" || status === "streaming" ? (
                 <StopButton setMessages={setMessages} stop={stop} />
               ) : (
                 <PromptInputSubmit
+                  aria-label={
+                    status === "error" ? "Retry message" : "Send message"
+                  }
                   className="size-8 rounded-full bg-teal-50 text-background transition-colors duration-200 hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
                   disabled={
                     (input.trim().length === 0 && attachments.length === 0) ||
@@ -614,6 +644,7 @@ function PureStopButton({
 }) {
   return (
     <Button
+      aria-label="Stop response"
       className="size-7 rounded-full bg-foreground p-1 text-background transition-colors duration-200 hover:bg-foreground/90 disabled:bg-muted disabled:text-muted-foreground"
       data-testid="stop-button"
       onClick={(event) => {

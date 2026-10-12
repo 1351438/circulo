@@ -183,8 +183,8 @@ export function WorkspaceShell({
           </div>
         </header>
         <Separator />
-        <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] items-stretch gap-4 py-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:grid-rows-none lg:items-start lg:gap-8 lg:py-8">
-          <aside className="min-h-0 overflow-y-auto lg:sticky lg:top-6">
+        <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] items-stretch gap-4 py-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:gap-8 lg:py-8">
+          <aside className="min-h-0 overflow-y-auto">
             <div className="lg:hidden">
               <label
                 className="mb-2 block text-xs font-medium text-muted-foreground"
@@ -264,7 +264,7 @@ export function WorkspaceShell({
               ))}
             </nav>
           </aside>
-          <section className="min-h-0 min-w-0 overflow-y-auto overscroll-contain pr-1 pb-8">
+          <section className="min-h-0 min-w-0 overflow-auto overscroll-contain pr-1 pb-8">
             <div className="flex flex-col gap-4 border-b pb-6 sm:flex-row sm:items-end sm:justify-between">
               <div className="min-w-0">
                 <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
@@ -279,7 +279,7 @@ export function WorkspaceShell({
               </div>
               {actions}
             </div>
-            <div className="min-h-0 pt-6">{children}</div>
+            <div className="min-h-0 min-w-0 pt-6">{children}</div>
           </section>
         </div>
       </div>

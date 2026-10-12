@@ -1,6 +1,6 @@
 import { Message } from "@/domain/message/message";
-import type { DrizzleChatRepository } from "@/infrastructure/drizzle/chat-repository";
-import type { DrizzleMessageRepository } from "@/infrastructure/drizzle/message-repository";
+import { createDrizzleRepositories } from "@/infrastructure/drizzle";
+import type { DbInstance } from "@circulo-ai/db";
 import {
   Guard,
   Identifier,
@@ -26,9 +26,7 @@ export class PostMessage implements UseCase<
   PostMessageOutput
 > {
   constructor(
-    private readonly chats: DrizzleChatRepository,
-    private readonly messages: DrizzleMessageRepository,
-    private readonly uow: UnitOfWork,
+    private readonly uow: UnitOfWork<{ client: DbInstance }>,
   ) {}
 
   async execute(input: PostMessageInput): Promise<PostMessageOutput> {
@@ -41,8 +39,11 @@ export class PostMessage implements UseCase<
     const contentCheck = Guard.againstEmptyString(input.content, "content");
     if (!contentCheck.succeeded) return Result.fail(contentCheck.message);
 
-    return this.uow.transaction(async () => {
-      const chat = await this.chats.getById(Identifier.from(input.chatId));
+    return this.uow.transaction(async (scope) => {
+      const repositories = createDrizzleRepositories(scope.client);
+      const chat = await repositories.chat.getById(
+        Identifier.from(input.chatId),
+      );
       if (!chat) throw new NotFoundError("Chat", input.chatId);
 
       const message = new Message({
@@ -55,7 +56,7 @@ export class PostMessage implements UseCase<
         createdAt: new Date(),
       });
 
-      await this.messages.save(message);
+      await repositories.message.save(message);
 
       return Result.ok({ messageId: message.getId().toString() });
     });

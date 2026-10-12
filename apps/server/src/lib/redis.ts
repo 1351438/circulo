@@ -27,6 +27,14 @@ function getLogger(): (
 export function getRedisClient(): CirculoRedis | null {
   if (cachedClient !== undefined) return cachedClient;
 
+  // The desktop runtime is single-process and intentionally runs without
+  // Redis. Ignore a REDIS_URL inherited from apps/server/.env so local
+  // desktop behavior stays independent of external services.
+  if (process.env.CIRCULO_RUNTIME_KIND === "desktop") {
+    cachedClient = null;
+    return cachedClient;
+  }
+
   const url = process.env.REDIS_URL;
   if (!url) {
     cachedClient = null;

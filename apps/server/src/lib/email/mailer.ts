@@ -164,32 +164,15 @@ export async function sendEmail(
       }
     }
 
-    // Never report a delivery success in production when no provider is
-    // configured or a configured provider failed. The mock result is only a
-    // deliberate local-development fallback for flows that do not need mail.
-    if (providerFailed || env.NODE_ENV === "production") {
-      logger.error("Email delivery unavailable", {
-        providerFailed,
-        configured: hasEmailService(),
-      });
-      return {
-        success: false,
-        message: providerFailed
-          ? "Configured email service failed"
-          : "Email service is not configured",
-      };
-    }
-
-    // No email service configured in local development
-    logger.info("Email not sent (no email service configured):", {
-      to: options.to,
-      subject: options.subject,
-      from: processedData.senderEmail,
+    logger.error("Email delivery unavailable", {
+      providerFailed,
+      configured: hasEmailService(),
     });
     return {
-      success: true,
-      message: "Email logging successful (no email service configured)",
-      data: { id: "mock-email-id" },
+      success: false,
+      message: providerFailed
+        ? "Configured email service failed"
+        : "Email service is not configured",
     };
   } catch (error) {
     logger.error("Error sending email:", error);
