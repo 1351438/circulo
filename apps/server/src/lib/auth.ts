@@ -508,7 +508,7 @@ const authOptions: BetterAuthOptions = {
                 {
                   headers: {
                     Authorization: `Bearer ${tokens.accessToken}`,
-                    "User-Agent": "sim-studio",
+                    "User-Agent": "circulo",
                   },
                 },
               );
@@ -531,7 +531,7 @@ const authOptions: BetterAuthOptions = {
                   {
                     headers: {
                       Authorization: `Bearer ${tokens.accessToken}`,
-                      "User-Agent": "sim-studio",
+                      "User-Agent": "circulo",
                     },
                   },
                 );
@@ -1283,7 +1283,7 @@ const authOptions: BetterAuthOptions = {
                 {
                   headers: {
                     Authorization: `Bearer ${tokens.accessToken}`,
-                    "User-Agent": "sim-studio/1.0",
+                    "User-Agent": "circulo/1.0",
                   },
                 },
               );

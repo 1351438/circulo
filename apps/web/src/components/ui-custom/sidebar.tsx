@@ -5,7 +5,7 @@ import {
 } from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 import { Archive, ArchiveRestore, Pin, PinOff, Trash2 } from "lucide-react";
-import { ComponentProps, forwardRef } from "react";
+import { type ComponentProps, forwardRef } from "react";
 import {
   Sidebar,
   SidebarGroup,

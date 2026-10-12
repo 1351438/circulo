@@ -23,18 +23,18 @@ import { getDb, type DbInstance } from "@/db";
 import type { DrizzleRepositories } from "@/infrastructure/drizzle";
 import {
   createDrizzleRepositories,
-  DrizzleAgentRepository,
-  DrizzleArtifactRepository,
-  DrizzleChatAgentLinkRepository,
-  DrizzleChatInvitationRepository,
-  DrizzleChatMemberRepository,
-  DrizzleChatRepository,
-  DrizzleMessageRepository,
-  DrizzleOrganizationMemberRepository,
-  DrizzleOrganizationRepository,
-  DrizzleSuggestionRepository,
-  DrizzleUserRepository,
-  DrizzleWorkflowRunRepository,
+  type DrizzleAgentRepository,
+  type DrizzleArtifactRepository,
+  type DrizzleChatAgentLinkRepository,
+  type DrizzleChatInvitationRepository,
+  type DrizzleChatMemberRepository,
+  type DrizzleChatRepository,
+  type DrizzleMessageRepository,
+  type DrizzleOrganizationMemberRepository,
+  type DrizzleOrganizationRepository,
+  type DrizzleSuggestionRepository,
+  type DrizzleUserRepository,
+  type DrizzleWorkflowRunRepository,
 } from "@/infrastructure/drizzle";
 import { createLogger } from "@/lib/logs/console/logger";
 import { getRedisClient } from "@/lib/redis";

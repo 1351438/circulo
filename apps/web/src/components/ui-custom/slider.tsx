@@ -1,6 +1,6 @@
-import { ChangeEvent, ComponentProps } from "react";
+import type { ChangeEvent, ComponentProps } from "react";
 import { Slider } from "../ui/slider";
-import { InputComponentProps } from "./controlled-input";
+import type { InputComponentProps } from "./controlled-input";
 
 interface SliderInputProps
   extends

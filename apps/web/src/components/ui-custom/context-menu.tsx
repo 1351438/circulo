@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { ComponentProps } from "react";
+import type { ComponentProps } from "react";
 import { ContextMenuContent, ContextMenuItem } from "../ui/context-menu";
 
 interface CustomContextMenuContentProps extends ComponentProps<

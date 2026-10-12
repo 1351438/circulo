@@ -4,13 +4,13 @@ import { cn } from "@/lib/utils";
 import { ImageMinus, ImagePlus } from "lucide-react";
 import Image from "next/image";
 import {
-  ChangeEvent,
-  ChangeEventHandler,
-  ComponentProps,
-  Dispatch,
-  DragEventHandler,
-  FC,
-  SetStateAction,
+  type ChangeEvent,
+  type ChangeEventHandler,
+  type ComponentProps,
+  type Dispatch,
+  type DragEventHandler,
+  type FC,
+  type SetStateAction,
   useCallback,
   useEffect,
   useId,

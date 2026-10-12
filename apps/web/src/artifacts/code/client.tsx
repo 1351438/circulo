@@ -1,7 +1,7 @@
 import {
   Console,
-  ConsoleOutput,
-  ConsoleOutputContent,
+  type ConsoleOutput,
+  type ConsoleOutputContent,
 } from "@/components/ai-elements/console";
 import { Artifact } from "@/components/artifacts/create-artifact";
 import { CodeEditor } from "@/components/editors/code/code-editor";

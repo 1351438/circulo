@@ -1,5 +1,5 @@
-import { AggregateRoot, Identifier, ValidationError } from "@circulo-ai/core";
-import { type AiProviderId, type SupportedModels } from "@circulo-ai/types";
+import { AggregateRoot, type Identifier, ValidationError } from "@circulo-ai/core";
+import type { AiProviderId, SupportedModels } from "@circulo-ai/types";
 
 export type AgentProps = {
   id: Identifier;

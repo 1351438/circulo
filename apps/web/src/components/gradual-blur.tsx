@@ -2,8 +2,8 @@
 
 import * as math from "mathjs";
 import React, {
-  CSSProperties,
-  PropsWithChildren,
+  type CSSProperties,
+  type PropsWithChildren,
   useEffect,
   useMemo,
   useRef,
@@ -106,8 +106,8 @@ const CURVE_FUNCTIONS: Record<string, (p: number) => number> = {
   linear: (p) => p,
   bezier: (p) => p * p * (3 - 2 * p),
   "ease-in": (p) => p * p,
-  "ease-out": (p) => 1 - Math.pow(1 - p, 2),
-  "ease-in-out": (p) => (p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2),
+  "ease-out": (p) => 1 - (1 - p) ** 2,
+  "ease-in-out": (p) => (p < 0.5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2),
 };
 
 const mergeConfigs = (

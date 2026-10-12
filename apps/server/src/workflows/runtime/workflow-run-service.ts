@@ -10,7 +10,7 @@ import {
   type OrchestrationWorkflowState,
 } from "@/workflows/orchestrate/orchestrate";
 import type { OrchestrationInput } from "@/workflows/orchestrate/types";
-import { type Workflow, type WorkflowEvent } from "@circulo-ai/wf";
+import type { Workflow, WorkflowEvent } from "@circulo-ai/wf";
 import { eq } from "drizzle-orm";
 import {
   closeWorkflowOutputChannel,

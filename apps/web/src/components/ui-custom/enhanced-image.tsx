@@ -2,8 +2,8 @@ import { getGhostProps } from "@/lib/ghost";
 import { ImageOff } from "lucide-react";
 import Image from "next/image";
 import {
-  ComponentProps,
-  ReactEventHandler,
+  type ComponentProps,
+  type ReactEventHandler,
   useCallback,
   useState,
 } from "react";

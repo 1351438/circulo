@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { ChangeEvent, ComponentProps, ReactNode } from "react";
+import type { ChangeEvent, ComponentProps, ReactNode } from "react";
 import {
   Select,
   SelectContent,
@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { InputComponentProps } from "./controlled-input";
+import type { InputComponentProps } from "./controlled-input";
 
 interface Option {
   value: string;

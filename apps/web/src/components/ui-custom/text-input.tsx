@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { ComponentProps, InputHTMLAttributes } from "react";
+import type { ComponentProps, InputHTMLAttributes } from "react";
 import { Input } from "../ui/input";
 
 interface TextInputProps extends ComponentProps<typeof Input> {

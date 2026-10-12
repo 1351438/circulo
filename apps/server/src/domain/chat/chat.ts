@@ -1,6 +1,6 @@
 import {
   AggregateRoot,
-  Identifier,
+  type Identifier,
   ValidationError,
   type DomainEvent,
 } from "@circulo-ai/core";

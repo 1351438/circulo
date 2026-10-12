@@ -1,5 +1,5 @@
 import { Vote } from "@/domain/vote/vote";
-import { DrizzleVoteRepository } from "@/infrastructure/drizzle/vote-repository";
+import type { DrizzleVoteRepository } from "@/infrastructure/drizzle/vote-repository";
 import { Guard, Result, type UnitOfWork, type UseCase } from "@circulo-ai/core";
 
 export type SetVoteInput = {

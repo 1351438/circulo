@@ -1,5 +1,5 @@
 import { toast } from "@/components/toast";
-import { mutate as globalMutate, mutate, SWRConfiguration } from "swr";
+import { mutate as globalMutate, mutate, type SWRConfiguration } from "swr";
 import {
   ApiRequestError,
   deleteRequest,

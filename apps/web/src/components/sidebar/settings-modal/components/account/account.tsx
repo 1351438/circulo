@@ -240,7 +240,7 @@ export function Account(_props: AccountProps) {
                       });
                     }
                   }}
-                  customComponent={({}) => (
+                  customComponent={() => (
                     <div className="group relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#802FFF] transition-all hover:opacity-80">
                       {(() => {
                         const imageUrl =

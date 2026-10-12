@@ -1,4 +1,4 @@
-import { ReplayWorkflowRunner } from "../durable/replay-workflow-runner";
+import type { ReplayWorkflowRunner } from "../durable/replay-workflow-runner";
 import type {
   IdempotencyStore,
   ReplayWorkflowRunnerOptions,

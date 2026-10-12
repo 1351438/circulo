@@ -68,7 +68,7 @@ const LOG_CONFIG = {
     colorize: true,
   },
   production: {
-    enabled: true, // Will be checked at runtime
+    enabled: true,
     minLevel: getMinLogLevel(),
     colorize: false,
   },
@@ -130,10 +130,9 @@ export class Logger {
   private shouldLog(level: LogLevel): boolean {
     if (!config.enabled) return false;
 
-    // In production, only log on server-side (where window is undefined)
-    if (ENV === "production") {
-      return false;
-    }
+    // This logger only ever runs server-side, so production logs are kept and
+    // filtered by `config.minLevel` (ERROR by default, overridable with
+    // LOG_LEVEL) rather than suppressed outright.
 
     const levels = [
       LogLevel.DEBUG,

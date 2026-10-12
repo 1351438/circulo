@@ -17,7 +17,7 @@ import {
 } from "@/components/ui-custom/input-group";
 import { Ripple } from "@/components/ui-custom/ripple";
 import {
-  Route,
+  type Route,
   RouteFlowController,
   RouteViewHeader,
   useRouteFlowViewContext,
@@ -58,7 +58,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useUploadTaskManager } from "@/hooks/use-upload-task-manager";
 import { useVoiceRecorder } from "@/hooks/use-voice-recorder";
 import { defaultModelForProvider } from "@/lib/ai-providers";
-import { ApiRequestError } from "@/lib/api/client";
+import type { ApiRequestError } from "@/lib/api/client";
 import { attachmentFromUploadTask } from "@/lib/attachments";
 import { deepReplace } from "@/lib/deep-replace";
 import {
@@ -71,7 +71,7 @@ import type { Attachment } from "@/lib/types";
 import { cn, generateUUID } from "@/lib/utils";
 import { useChatHistoryStore } from "@/stores/use-chat-history-store";
 import { useChat } from "@ai-sdk/react";
-import { Agent } from "@circulo-ai/db";
+import type { Agent } from "@circulo-ai/db";
 import {
   createAgentBodySchema,
   defaultModel,
@@ -97,11 +97,11 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
-  ComponentProps,
+  type ComponentProps,
   createContext,
-  Dispatch,
+  type Dispatch,
   forwardRef,
-  SetStateAction,
+  type SetStateAction,
   useCallback,
   useContext,
   useEffect,
@@ -110,13 +110,13 @@ import {
   useRef,
   useState,
 } from "react";
-import { Path, useForm, useFormContext, useWatch } from "react-hook-form";
+import { type Path, useForm, useFormContext, useWatch } from "react-hook-form";
 import { toast } from "sonner";
-import useSWR, { Key, useSWRConfig } from "swr";
+import useSWR, { type Key, useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
 import useSWRMutation from "swr/mutation";
 import { useLocalStorage } from "usehooks-ts";
-import z from "zod";
+import type z from "zod";
 
 // ---- Shared context for agent selection ----
 interface AgentSelectionContextValue {

@@ -1,4 +1,4 @@
-import { Entity, Identifier, ValidationError } from "@circulo-ai/core";
+import { Entity, type Identifier, ValidationError } from "@circulo-ai/core";
 
 export type MessageProps = {
   id: Identifier;

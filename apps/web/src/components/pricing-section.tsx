@@ -1,6 +1,6 @@
-import { generateRandomPath, Step } from "@/lib/border-walk";
+import { generateRandomPath, type Step } from "@/lib/border-walk";
 import { isBillingEnabled } from "@/lib/environment";
-import { Icon } from "@/types/icon";
+import type { Icon } from "@/types/icon";
 import { BILLING_PLANS, formatBillingLimit } from "@circulo-ai/types";
 import {
   Bot,

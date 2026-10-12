@@ -7,9 +7,63 @@
   },
   "linter": {
     "rules": {
-      "recommended": false,
+      "recommended": true,
       "style": {
         "noNonNullAssertion": "off"
+      },
+      "a11y": {
+        "noLabelWithoutControl": "off",
+        "noRedundantRoles": "off",
+        "noStaticElementInteractions": "off",
+        "noSvgWithoutTitle": "off",
+        "useAltText": "off",
+        "useAnchorContent": "off",
+        "useAriaPropsForRole": "off",
+        "useAriaPropsSupportedByRole": "off",
+        "useButtonType": "off",
+        "useFocusableInteractive": "off",
+        "useKeyWithClickEvents": "off",
+        "useMediaCaption": "off",
+        "useSemanticElements": "off"
+      },
+      "complexity": {
+        "noArguments": "off",
+        "noBannedTypes": "off",
+        "noStaticOnlyClass": "off",
+        "noUselessEscapeInRegex": "off",
+        "noUselessSwitchCase": "off",
+        "noUselessTernary": "off",
+        "noUselessUndefinedInitialization": "off",
+        "useLiteralKeys": "off",
+        "useOptionalChain": "off"
+      },
+      "correctness": {
+        "noUnusedFunctionParameters": "off",
+        "noUnusedPrivateClassMembers": "off",
+        "noUnusedVariables": "off",
+        "useExhaustiveDependencies": "off",
+        "useParseIntRadix": "off"
+      },
+      "performance": {
+        "noAccumulatingSpread": "off",
+        "noImgElement": "off"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "off"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "off",
+        "noAssignInExpressions": "off",
+        "noConfusingVoidType": "off",
+        "noControlCharactersInRegex": "off",
+        "noDocumentCookie": "off",
+        "noExplicitAny": "off",
+        "noGlobalIsNan": "off",
+        "noImplicitAnyLet": "off",
+        "noPrototypeBuiltins": "off",
+        "noShadowRestrictedNames": "off",
+        "noThenProperty": "off",
+        "useIterableCallbackReturn": "off"
       }
     }
   },

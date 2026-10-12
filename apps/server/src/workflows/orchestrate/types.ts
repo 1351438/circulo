@@ -1,5 +1,5 @@
 import type { ApiKeyPermissions } from "@/lib/permissions";
-import { type ChatMessage } from "@/lib/types";
+import type { ChatMessage } from "@/lib/types";
 
 export interface WorkflowActor {
   userId: string;

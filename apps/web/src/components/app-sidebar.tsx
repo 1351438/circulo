@@ -4,7 +4,7 @@ import { UserButton } from "@/components/auth/user/user-button";
 import { CollapsedConversationItem } from "@/components/sidebar/telegram/collapsed-conversation-item";
 import { ConversationItem } from "@/components/sidebar/telegram/conversation-item";
 import { SidebarHeader as TelegramSidebarHeader } from "@/components/sidebar/telegram/sidebar-header";
-import { Conversation } from "@/components/sidebar/telegram/types";
+import type { Conversation } from "@/components/sidebar/telegram/types";
 import {
   Sidebar,
   SidebarContent,
@@ -16,7 +16,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { User } from "@/providers/session-provider";
+import type { User } from "@/providers/session-provider";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -260,7 +260,7 @@ export function AppSidebar({ user }: { user: User }) {
           {user && (
             <UserButton
               className="mb-1"
-              size={state == "collapsed" ? "icon" : "default"}
+              size={state === "collapsed" ? "icon" : "default"}
               variant={"ghost"}
             />
           )}

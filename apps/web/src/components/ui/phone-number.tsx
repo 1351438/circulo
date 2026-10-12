@@ -1,4 +1,4 @@
-import { ComponentProps } from "react";
+import type { ComponentProps } from "react";
 
 interface PhoneNumberProps extends Omit<
   ComponentProps<"a">,

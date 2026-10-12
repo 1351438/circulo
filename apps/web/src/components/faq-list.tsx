@@ -2,7 +2,7 @@
 
 import { faqs } from "@/consts/faq-section";
 import { useFaq } from "@/providers/faq-provider";
-import { ComponentProps, useEffect, useMemo, useRef } from "react";
+import { type ComponentProps, useEffect, useMemo, useRef } from "react";
 import { CustomAccordionTrigger } from "./ui-custom/accordion";
 import { Accordion, AccordionContent, AccordionItem } from "./ui/accordion";
 import { AnimatedItem, AnimatedList } from "./ui/animated-list";

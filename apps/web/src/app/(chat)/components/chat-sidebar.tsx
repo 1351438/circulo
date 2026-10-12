@@ -1,7 +1,7 @@
 import { CustomSidebar } from "@/components/ui-custom/sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { cookies } from "next/headers";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { ChatSidebarInside } from "./chat-sidebar-inside";
 import { ChatSidebarLayout } from "./chat-sidebar-layout";
 

@@ -1,11 +1,11 @@
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import {
-  ComponentProps,
+  type ComponentProps,
   createContext,
-  Dispatch,
-  FC,
-  SetStateAction,
+  type Dispatch,
+  type FC,
+  type SetStateAction,
   useContext,
   useMemo,
   useState,

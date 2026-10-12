@@ -5,7 +5,7 @@ import {
   getSession,
   memberRole,
   ownerRole,
-  statement,
+  type statement,
   type SessionResponse,
 } from "@/lib/auth";
 import { ForbiddenError } from "@circulo-ai/types";
@@ -353,50 +353,3 @@ export async function withPermission<R extends Resource>(
 ) {
   await requirePermission(resource, action, organizationId);
 }
-
-// ============================================================================
-// Usage Examples
-// ============================================================================
-
-/*
-// In a server action or API route:
-import { requirePermission, hasPermission, isOwner } from "@/lib/auth/permissions";
-
-// Check permission and throw if not allowed
-export async function createChat(data: any) {
-  await requirePermission("chat", "create");
-  // ... create chat logic
-}
-
-// Check permission and handle manually
-export async function updateChat(chatId: string, data: any) {
-  const canUpdate = await hasPermission("chat", "update");
-  if (!canUpdate) {
-    return { error: "You don't have permission to update chats" };
-  }
-  // ... update chat logic
-}
-
-// Check role
-export async function deleteOrganization(orgId: string) {
-  if (!(await isOwner(orgId))) {
-    throw new Error("Only owners can delete organizations");
-  }
-  // ... delete logic
-}
-
-// Batch permission check
-export async function getChatPermissions(orgId: string) {
-  return await hasPermissions([
-    { resource: "chat", action: "create" },
-    { resource: "chat", action: "update" },
-    { resource: "chat", action: "delete" },
-  ], orgId);
-}
-
-// Get all permissions for current user
-export async function getCurrentUserPermissions() {
-  const permissions = await getUserPermissions();
-  // Returns: { chat: ["create", "share"], member: [], invitation: ["create"] }
-}
-*/

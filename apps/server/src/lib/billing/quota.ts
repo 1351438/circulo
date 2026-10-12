@@ -1,4 +1,4 @@
-import { beginTransaction, db } from "@/db";
+import { beginTransaction, type db } from "@/db";
 import { quotaBucket, quotaReservation } from "@/db/schema";
 import {
   getOrganizationFeatureLimit,

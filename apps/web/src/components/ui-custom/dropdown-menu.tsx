@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { ComponentProps } from "react";
+import type { ComponentProps } from "react";
 import { DropdownMenuContent, DropdownMenuItem } from "../ui/dropdown-menu";
 
 interface CustomDropdownMenuContentProps extends ComponentProps<
