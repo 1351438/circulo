@@ -436,7 +436,7 @@ DATABASE_URL="..." bun ./node_modules/turbo/bin/turbo run test --force
 
 ### Totals
 
-|                   | Round 1 (`09ea11d`)            | Round 2 (working tree)         |
+|                   | Round 1 (`09ea11d`)            | Round 2                        |
 | ----------------- | ------------------------------ | ------------------------------ |
 | Files changed     | 133 + 1 new                    | 140                            |
 | Lines             | +357 / −270                    | +1 857 / −2 186                |
