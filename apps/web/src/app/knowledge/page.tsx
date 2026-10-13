@@ -32,6 +32,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import { FormRoot } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { WorkspaceShell } from "@/components/workspace/workspace-shell";
@@ -395,7 +396,7 @@ function KnowledgePageContent() {
                   </EmptyHeader>
                 </Empty>
               )}
-              <form
+              <FormRoot
                 className="flex flex-col gap-4 border-t pt-4"
                 onSubmit={createBase}
               >
@@ -441,7 +442,7 @@ function KnowledgePageContent() {
                 <Button disabled={saving} type="submit">
                   <Plus data-icon="inline-start" /> Create base
                 </Button>
-              </form>
+              </FormRoot>
             </CardContent>
           </Card>
           <Card>
@@ -613,7 +614,7 @@ function KnowledgePageContent() {
                       </Empty>
                     )}
                   </div>
-                  <form
+                  <FormRoot
                     className="flex flex-col gap-4 border-t pt-5"
                     onSubmit={addDocument}
                   >
@@ -679,7 +680,7 @@ function KnowledgePageContent() {
                     <Button disabled={saving} type="submit">
                       <Plus data-icon="inline-start" /> Add document
                     </Button>
-                  </form>
+                  </FormRoot>
                   <div className="flex flex-col gap-2 border-t pt-5">
                     <div>
                       <div className="text-sm font-medium">

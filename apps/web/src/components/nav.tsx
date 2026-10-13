@@ -30,7 +30,9 @@ export function Nav() {
 
       <div className="flex w-48 items-center gap-2">
         <Logo className="max-sm:h-6" />
-        <h1 className="text-2xl text-teal-50 sm:text-4xl">Circulo</h1>
+        <h1 className="text-2xl font-medium text-foreground sm:text-4xl">
+          Circulo
+        </h1>
       </div>
 
       <ul
@@ -61,7 +63,7 @@ export function Nav() {
             variant="primary"
             size="icon-xs"
             rounded="full"
-            className="duration-300 data-active:text-foreground"
+            className="text-primary-foreground duration-300"
           >
             <a href="#contact-us">
               <Phone className="relative" />

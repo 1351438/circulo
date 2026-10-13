@@ -157,7 +157,7 @@ export function AdditionalField({
 
   if (inputType === "hidden") {
     return (
-      <input
+      <Input
         type="hidden"
         name={name}
         value={
@@ -536,7 +536,7 @@ function DateInput({ name, field, isPending }: AdditionalFieldProps) {
             onInvalid suppresses the native browser balloon and routes the message
             through the styled <FieldError> below — matching the pattern used by
             the Name / Email / Password fields in the sign-up form. */}
-        <input
+        <Input
           aria-label={typeof field.label === "string" ? field.label : name}
           type="text"
           name={name}

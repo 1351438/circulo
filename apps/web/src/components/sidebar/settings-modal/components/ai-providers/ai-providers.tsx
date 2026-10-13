@@ -8,8 +8,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { FormRoot } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { AiProviderDefinition, AiProviderId } from "@circulo-ai/types";
 import { KeyRound, Loader2, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -197,7 +206,7 @@ export function AIProviders({
         </Card>
       )}
 
-      <form
+      <FormRoot
         onSubmit={(event) => void addCredential(event)}
         className={
           isWorkspace
@@ -211,24 +220,30 @@ export function AIProviders({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="ai-provider">Provider</Label>
-            <select
-              id="ai-provider"
-              value={form.providerId}
-              onChange={(event) =>
+            <Select
+              value={selectedDefinition ? form.providerId : null}
+              onValueChange={(providerId) => {
+                if (!providerId) return;
                 setForm((current) => ({
                   ...current,
-                  providerId: event.target.value as AiProviderId,
+                  providerId: providerId as AiProviderId,
                   baseUrl: "",
-                }))
-              }
-              className="h-9 w-full rounded-4xl border border-input bg-input/30 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                }));
+              }}
             >
-              {(data?.providers ?? []).map((provider) => (
-                <option key={provider.id} value={provider.id}>
-                  {provider.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="ai-provider" className="w-full">
+                <SelectValue placeholder="Choose a provider" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {(data?.providers ?? []).map((provider) => (
+                    <SelectItem key={provider.id} value={provider.id}>
+                      {provider.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="ai-provider-name">Label</Label>
@@ -296,7 +311,7 @@ export function AIProviders({
             Connect
           </Button>
         </div>
-      </form>
+      </FormRoot>
     </div>
   );
 }

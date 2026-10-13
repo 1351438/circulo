@@ -48,8 +48,12 @@ export async function request<T>(
       // Your backend returns { message: string, errors?: [] } for 400/500
       //
 
-      const errorMessage = data?.message || response.statusText;
-      const errorDetails = data?.errors || undefined; // Specifically for ValidationError
+      const errorMessage =
+        data?.message ||
+        (typeof data?.details === "string" ? data.details : undefined) ||
+        data?.error ||
+        response.statusText;
+      const errorDetails = data?.details ?? data?.errors ?? undefined;
 
       throw new ApiRequestError(
         response.status,

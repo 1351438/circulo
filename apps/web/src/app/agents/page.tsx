@@ -10,6 +10,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import { FormRoot } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -285,7 +286,7 @@ function AgentsPageContent() {
           <h2 className="font-medium">
             {editingId ? "Edit agent" : "New agent"}
           </h2>
-          <form className="flex flex-col gap-4" onSubmit={submitForm}>
+          <FormRoot className="flex flex-col gap-4" onSubmit={submitForm}>
             <FieldGroup>
               <Field data-invalid={Boolean(formError)}>
                 <FieldLabel htmlFor="agent-name">Name</FieldLabel>
@@ -539,7 +540,7 @@ function AgentsPageContent() {
               <Save data-icon="inline-start" />{" "}
               {saving ? "Saving…" : "Save agent"}
             </Button>
-          </form>
+          </FormRoot>
         </section>
       </div>
     </WorkspaceShell>

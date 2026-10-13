@@ -27,6 +27,7 @@ export async function attachmentFromUploadTask(
     name: task.file.name,
     contentType: task.file.type || "application/octet-stream",
     size: task.file.size,
+    lastModified: task.file.lastModified || undefined,
     dataUrl: await readFileAsDataUrl(task.file),
     downloadUrl: task.downloadUrl,
   };

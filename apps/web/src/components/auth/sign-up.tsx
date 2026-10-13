@@ -10,6 +10,7 @@ import {
   FieldLabel,
   FieldSeparator,
 } from "@/components/ui/field";
+import { FormRoot } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
   InputGroup,
@@ -214,7 +215,7 @@ export function SignUp({
           )}
 
           {emailAndPassword?.enabled && (
-            <form onSubmit={handleSubmit}>
+            <FormRoot onSubmit={handleSubmit}>
               <FieldGroup>
                 {emailAndPassword.name !== false && (
                   <Field data-invalid={!!fieldErrors.name}>
@@ -489,7 +490,7 @@ export function SignUp({
                   )}
                 </div>
               </FieldGroup>
-            </form>
+            </FormRoot>
           )}
 
           {socialPosition === "bottom" && (

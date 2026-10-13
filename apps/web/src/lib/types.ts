@@ -190,6 +190,7 @@ export type Attachment = {
   url: string;
   contentType: string;
   size?: number;
+  lastModified?: number;
   dataUrl?: string;
   downloadUrl?: string;
 };

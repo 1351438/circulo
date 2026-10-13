@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import { getAuthLinkURL } from "@better-auth-ui/core";
 import type { EmailOtpAuthClient } from "@better-auth-ui/core/plugins/email-otp";
 import { useAuth, useAuthPlugin } from "@better-auth-ui/react";
@@ -149,7 +150,7 @@ export function VerifyEmailOtp({ className }: VerifyEmailOtpProps) {
       </CardHeader>
 
       <CardContent>
-        <form onSubmit={handleSubmit}>
+        <FormRoot onSubmit={handleSubmit}>
           <FieldGroup>
             {email ? (
               <OtpField
@@ -229,7 +230,7 @@ export function VerifyEmailOtp({ className }: VerifyEmailOtpProps) {
               )}
             </div>
           </FieldGroup>
-        </form>
+        </FormRoot>
 
         <div className="mt-4 flex w-full flex-col items-center gap-3">
           <FieldDescription className="text-center">

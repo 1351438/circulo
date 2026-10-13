@@ -1,5 +1,15 @@
 "use client";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +48,8 @@ import {
   UserMinus01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
@@ -78,9 +90,11 @@ export function WorkspaceMembers({
   isPending: boolean;
   refetchOrganization?: () => Promise<unknown>;
 }) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("member");
   const [busy, setBusy] = useState(false);
+  const [leaveOpen, setLeaveOpen] = useState(false);
   const { data: roleData } = useSWR<{ roles: WorkspaceRole[] }>(
     organization?.id ? "/api/workspace/roles" : null,
     async (url: string) => {
@@ -122,20 +136,24 @@ export function WorkspaceMembers({
     }
   };
 
+  const requestMemberRoleUpdate = async (memberId: string, roleKey: string) => {
+    const response = await fetch(`/api/workspace/members/${memberId}/role`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ roleKey }),
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(
+        payload?.message ?? payload?.error ?? "Unable to update member role",
+      );
+    }
+  };
+
   const updateMemberRole = async (memberId: string, roleKey: string) => {
     setBusy(true);
     try {
-      const response = await fetch(`/api/workspace/members/${memberId}/role`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roleKey }),
-      });
-      const payload = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(
-          payload?.message ?? payload?.error ?? "Unable to update member role",
-        );
-      }
+      await requestMemberRoleUpdate(memberId, roleKey);
       await refetchOrganization?.();
       toast.success("Role updated");
     } catch (error) {
@@ -177,6 +195,18 @@ export function WorkspaceMembers({
   const currentMember = members.find(
     (member) => member.userId === session?.user?.id,
   );
+  const ownerCount = members.filter((member) =>
+    member.role
+      .split(",")
+      .map((value) => value.trim())
+      .includes("owner"),
+  ).length;
+  const isWorkspaceOwner = Boolean(
+    currentMember?.role
+      .split(",")
+      .map((value) => value.trim())
+      .includes("owner"),
+  );
   const currentRole = roleData?.roles.find(
     (item) => item.key === currentMember?.role,
   );
@@ -193,7 +223,7 @@ export function WorkspaceMembers({
       ),
     );
   const assignableRoles = (roleData?.roles ?? []).filter(
-    (item) => item.key !== "owner",
+    (item) => item.key !== "owner" || isWorkspaceOwner,
   );
   const roleOptions = assignableRoles.length
     ? assignableRoles
@@ -204,6 +234,49 @@ export function WorkspaceMembers({
   const roleName = (roleKey: string) =>
     roleData?.roles.find((item) => item.key === roleKey)?.name ??
     (roleKey === "owner" ? "Owner" : roleKey === "admin" ? "Admin" : "Member");
+
+  const leaveWorkspace = async () => {
+    if (!organization || !currentMember) return;
+    setBusy(true);
+    try {
+      if (isWorkspaceOwner) {
+        if (ownerCount < 2) {
+          throw new Error(
+            "Promote another member to owner before leaving this workspace.",
+          );
+        }
+        // Better Auth prevents owners from leaving. Once another owner exists,
+        // safely demote this owner first, then use Better Auth's leave endpoint.
+        await requestMemberRoleUpdate(currentMember.id, "admin");
+      }
+
+      const leave = (await organizationApi.leave({
+        organizationId: organization.id,
+      })) as { error?: { message?: string } | null };
+      if (leave?.error) {
+        throw new Error(leave.error.message ?? "Unable to leave workspace");
+      }
+      const active = (await organizationApi.setActive({
+        organizationId: null,
+      })) as { error?: { message?: string } | null };
+      if (active?.error) {
+        throw new Error(
+          active.error.message ?? "Unable to switch away from this workspace",
+        );
+      }
+      setLeaveOpen(false);
+      await refetchOrganization?.();
+      toast.success("You left the workspace");
+      router.replace("/chat");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to leave workspace",
+      );
+      await refetchOrganization?.();
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -297,6 +370,14 @@ export function WorkspaceMembers({
               member.user?.email ||
               member.email ||
               member.id;
+            const memberIsOwner = member.role
+              .split(",")
+              .map((value) => value.trim())
+              .includes("owner");
+            const isCurrentUser = member.userId === session?.user?.id;
+            const canEditRole =
+              canManageTeam &&
+              (!memberIsOwner || (isCurrentUser && isWorkspaceOwner));
             return (
               <div
                 className="flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"
@@ -315,7 +396,7 @@ export function WorkspaceMembers({
                     {roleName(member.role)}
                   </Badge>
                   <Select
-                    disabled={!canManageTeam || member.role === "owner"}
+                    disabled={busy || !canEditRole}
                     onValueChange={(value) =>
                       void updateMemberRole(member.id, String(value))
                     }
@@ -342,24 +423,47 @@ export function WorkspaceMembers({
                     </SelectContent>
                   </Select>
                   <Button
-                    aria-label={`Remove ${name}`}
-                    disabled={busy || !canManageTeam || member.role === "owner"}
+                    aria-label={
+                      isCurrentUser ? "Leave workspace" : `Remove ${name}`
+                    }
+                    disabled={
+                      busy ||
+                      (isCurrentUser
+                        ? memberIsOwner && ownerCount < 2
+                        : !canManageTeam || memberIsOwner)
+                    }
                     onClick={() =>
-                      void run(
-                        "removeMember",
-                        {
-                          memberIdOrEmail: member.id,
-                          organizationId: organization.id,
-                        },
-                        "Member removed",
-                      )
+                      isCurrentUser
+                        ? setLeaveOpen(true)
+                        : void run(
+                            "removeMember",
+                            {
+                              memberIdOrEmail: member.id,
+                              organizationId: organization.id,
+                            },
+                            "Member removed",
+                          )
                     }
                     size="icon"
                     variant="ghost"
+                    title={
+                      isCurrentUser && memberIsOwner && ownerCount < 2
+                        ? "Promote another member to owner before leaving"
+                        : undefined
+                    }
                   >
-                    <HugeiconsIcon icon={UserMinus01Icon} strokeWidth={2} />
+                    {isCurrentUser ? (
+                      <LogOut />
+                    ) : (
+                      <HugeiconsIcon icon={UserMinus01Icon} strokeWidth={2} />
+                    )}
                   </Button>
                 </div>
+                {isCurrentUser && memberIsOwner && ownerCount < 2 && (
+                  <p className="text-xs text-muted-foreground sm:basis-full sm:text-right">
+                    Assign another member as owner before leaving.
+                  </p>
+                )}
               </div>
             );
           })}
@@ -421,6 +525,37 @@ export function WorkspaceMembers({
           </CardContent>
         </Card>
       )}
+
+      <AlertDialog
+        onOpenChange={(open) => !busy && setLeaveOpen(open)}
+        open={leaveOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave {organization.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will lose access to this workspace and its chats, agents, and
+              shared resources. You can rejoin only if a workspace owner invites
+              you again.
+              {isWorkspaceOwner &&
+                " Your role will change to Admin before you leave so another owner remains in place."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={busy}
+              onClick={(event) => {
+                event.preventDefault();
+                void leaveWorkspace();
+              }}
+              variant="destructive"
+            >
+              {busy ? "Leaving…" : "Leave workspace"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

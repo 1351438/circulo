@@ -118,6 +118,11 @@ export const memory = pgTable(
       .$type<Record<string, unknown>>()
       .notNull()
       .default({}),
+    embedding: vector("embedding", { dimensions: 1536 }),
+    embeddingModel: text("embedding_model"),
+    embeddingUpdatedAt: timestamp("embedding_updated_at", {
+      withTimezone: true,
+    }),
     sourceType: text("source_type").notNull().default("manual"),
     sourceId: text("source_id"),
     importance: integer("importance").notNull().default(50),
@@ -134,6 +139,14 @@ export const memory = pgTable(
     index("memories_org_idx").on(t.organizationId, t.scope),
     index("memories_chat_idx").on(t.chatId, t.updatedAt),
     index("memories_agent_idx").on(t.agentId, t.updatedAt),
+    index("memories_embedding_idx").using(
+      "hnsw",
+      t.embedding.op("vector_cosine_ops"),
+    ),
+    index("memories_search_idx").using(
+      "gin",
+      sql`to_tsvector('simple', ${t.key} || ' ' || ${t.content})`,
+    ),
     check(
       "memories_scope_target_check",
       sql`(

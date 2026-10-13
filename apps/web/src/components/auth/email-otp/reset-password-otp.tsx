@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import { getAuthLinkURL } from "@better-auth-ui/core";
 import type { EmailOtpAuthClient } from "@better-auth-ui/core/plugins/email-otp";
 import { useAuth, useAuthPlugin } from "@better-auth-ui/react";
@@ -172,7 +173,7 @@ export function ResetPasswordOtp({ className }: ResetPasswordOtpProps) {
       </CardHeader>
 
       <CardContent>
-        <form ref={formRef} onSubmit={handleSubmit}>
+        <FormRoot ref={formRef} onSubmit={handleSubmit}>
           <FieldGroup>
             {!hasStoredEmail && (
               <Field data-invalid={!!fieldErrors.email}>
@@ -313,7 +314,7 @@ export function ResetPasswordOtp({ className }: ResetPasswordOtpProps) {
               {email && <OpenEmailButton email={email} variant="secondary" />}
             </div>
           </FieldGroup>
-        </form>
+        </FormRoot>
 
         <div className="mt-4 flex w-full flex-col items-center gap-3">
           <FieldDescription className="text-center">

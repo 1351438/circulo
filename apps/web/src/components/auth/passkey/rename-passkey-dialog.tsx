@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { FormRoot } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { passkeyPlugin } from "@/lib/auth/passkey-plugin";
@@ -48,7 +49,7 @@ export function RenamePasskeyDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <form className="flex flex-col gap-6" onSubmit={submit}>
+        <FormRoot className="flex flex-col gap-6" onSubmit={submit}>
           <DialogHeader>
             <DialogTitle>{labels.renamePasskey}</DialogTitle>
           </DialogHeader>
@@ -79,7 +80,7 @@ export function RenamePasskeyDialog({
               {localization.settings.saveChanges}
             </Button>
           </DialogFooter>
-        </form>
+        </FormRoot>
       </DialogContent>
     </Dialog>
   );

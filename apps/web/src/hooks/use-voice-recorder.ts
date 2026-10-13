@@ -49,6 +49,16 @@ function getSpeechRecognition(): BrowserSpeechRecognition | undefined {
   return Constructor ? new Constructor() : undefined;
 }
 
+function getRecordingExtension(mimeType: string): string {
+  const baseMimeType = mimeType.split(";", 1)[0]?.trim().toLowerCase();
+  if (baseMimeType === "audio/mp4") return "m4a";
+  if (baseMimeType === "audio/ogg") return "ogg";
+  if (baseMimeType === "audio/wav" || baseMimeType === "audio/wave") {
+    return "wav";
+  }
+  return "webm";
+}
+
 export function useVoiceRecorder({
   onRecordingComplete,
   onRecordingError,
@@ -60,6 +70,10 @@ export function useVoiceRecorder({
   const streamRef = useRef<MediaStream | null>(null);
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const recordingFormatRef = useRef<{
+    extension: string;
+    mimeType: string;
+  } | null>(null);
   const transcriptRef = useRef("");
   const finalizeTimerRef = useRef<number | null>(null);
   const startedAtRef = useRef<number | null>(null);
@@ -101,6 +115,7 @@ export function useVoiceRecorder({
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
     recorderRef.current = null;
+    recordingFormatRef.current = null;
     startedAtRef.current = null;
     isRecordingRef.current = false;
     setIsRecording(false);
@@ -146,9 +161,10 @@ export function useVoiceRecorder({
     const recorder = recorderRef.current;
     if (!recorder || recorder.state === "inactive") return;
 
-    const recordingFormat = RECORDING_MIME_TYPES.find(
-      ({ mimeType }) => mimeType === recorder.mimeType,
-    ) ?? { mimeType: recorder.mimeType, extension: "webm" };
+    const recordingFormat = recordingFormatRef.current ?? {
+      mimeType: recorder.mimeType || "audio/webm",
+      extension: getRecordingExtension(recorder.mimeType || "audio/webm"),
+    };
     recorder.stop();
     stopRecognition(true);
     // Let the browser deliver the final recognition result before reading the
@@ -175,7 +191,6 @@ export function useVoiceRecorder({
     transcriptRef.current = "";
     setTranscript("");
     resetRecordingState();
-    discardRef.current = false;
   }, [clearFinalizeTimer, resetRecordingState, stopRecognition]);
 
   const start = useCallback(async () => {
@@ -204,17 +219,23 @@ export function useVoiceRecorder({
     let stream: MediaStream | undefined;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recordingFormat = RECORDING_MIME_TYPES.find(({ mimeType }) =>
-        MediaRecorder.isTypeSupported(mimeType),
-      );
-
-      if (!recordingFormat) {
-        throw new Error("No supported audio recording format is available.");
-      }
-
-      const recorder = new MediaRecorder(stream, {
-        mimeType: recordingFormat.mimeType,
-      });
+      const supportedFormat =
+        typeof MediaRecorder.isTypeSupported === "function"
+          ? RECORDING_MIME_TYPES.find(({ mimeType }) =>
+              MediaRecorder.isTypeSupported(mimeType),
+            )
+          : undefined;
+      const recorder = supportedFormat
+        ? new MediaRecorder(stream, { mimeType: supportedFormat.mimeType })
+        : new MediaRecorder(stream);
+      const recordingFormat = {
+        mimeType:
+          recorder.mimeType || supportedFormat?.mimeType || "audio/webm",
+        extension: getRecordingExtension(
+          recorder.mimeType || supportedFormat?.mimeType || "audio/webm",
+        ),
+      };
+      recordingFormatRef.current = recordingFormat;
       chunksRef.current = [];
       streamRef.current = stream;
       recorderRef.current = recorder;
@@ -222,17 +243,27 @@ export function useVoiceRecorder({
       startedAtRef.current = Date.now();
 
       recorder.addEventListener("dataavailable", (event) => {
-        if (event.data.size > 0) chunksRef.current.push(event.data);
+        if (!discardRef.current && event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
       });
       recorder.addEventListener("error", () => {
         const recordingError = new Error("Voice recording failed.");
+        discardRef.current = true;
+        chunksRef.current = [];
         setError(recordingError);
         stopRecognition();
         resetRecordingState();
         onRecordingError?.(recordingError);
       });
       recorder.addEventListener("stop", () => {
-        if (discardRef.current || finalizeTimerRef.current !== null) return;
+        if (
+          discardRef.current ||
+          !isRecordingRef.current ||
+          finalizeTimerRef.current !== null
+        ) {
+          return;
+        }
         finalizeTimerRef.current = window.setTimeout(
           () => finishRecording(recordingFormat),
           160,

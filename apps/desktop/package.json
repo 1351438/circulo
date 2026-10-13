@@ -50,7 +50,10 @@
         "dmg",
         "zip"
       ],
-      "hardenedRuntime": true
+      "hardenedRuntime": true,
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Circulo uses your microphone when you start a voice recording in a chat."
+      }
     },
     "linux": {
       "target": [

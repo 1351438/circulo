@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import { authQueryKeys } from "@better-auth-ui/core";
 import type { TwoFactorAuthClient } from "@better-auth-ui/core/plugins/two-factor";
 import { useAuth, useAuthPlugin, useSession } from "@better-auth-ui/react";
@@ -210,7 +211,7 @@ export function TwoFactorChallenge({ className }: TwoFactorChallengeProps) {
       </CardHeader>
 
       <CardContent>
-        <form onSubmit={handleSubmit}>
+        <FormRoot onSubmit={handleSubmit}>
           <FieldGroup>
             {method === "backup" ? (
               <Field>
@@ -316,7 +317,7 @@ export function TwoFactorChallenge({ className }: TwoFactorChallengeProps) {
               ))}
             </div>
           </FieldGroup>
-        </form>
+        </FormRoot>
 
         <div className="mt-4 flex w-full flex-col items-center gap-3">
           <FieldDescription className="text-center">

@@ -1,5 +1,6 @@
 import {
   chatMember,
+  chat as chatTable,
   db,
   knowledgeBase,
   knowledgeDocument,
@@ -8,6 +9,7 @@ import {
   memoryPreference as memoryPreferenceTable,
   message,
   skill,
+  user as userTable,
   type Agent,
   type Chat,
   type ChatAgent,
@@ -21,7 +23,8 @@ import {
   isKnowledgeImageDocument,
   toKnowledgeImageDataUrl,
 } from "@/lib/knowledge/assets";
-import { createKnowledgeEmbedding } from "@/lib/knowledge/embeddings";
+import { createKnowledgeEmbeddingWithMetadata } from "@/lib/knowledge/embeddings";
+import { retrieveMemories } from "@/lib/memory/retrieval";
 import {
   hasPermissionForUser,
   type ApiKeyPermissions,
@@ -36,7 +39,14 @@ export interface ChatContext {
   orchestrationAgent?: Agent | null;
   agents: Array<ChatAgent & { agent: Agent }>;
   messages: Message[];
-  pastMessages: Message[];
+  pastMessages: Array<
+    Pick<Message, "role" | "parts" | "content"> & {
+      chatId: string;
+      chatTitle: string;
+      authorName: string;
+      createdAt: Date;
+    }
+  >;
   members: Array<
     ChatMember & { user: { id: string; name: string; email: string } }
   >;
@@ -59,6 +69,7 @@ export interface ChatContext {
     canReadOrganizationMemory: boolean;
     canReadChatMemory: boolean;
     canWritePersonalMemory: boolean;
+    automaticManagementEnabled: boolean;
     readableAgentIds: string[];
   };
   knowledgeBaseIds: string[];
@@ -123,11 +134,12 @@ export async function loadChatContextStep(
         )
     : [];
   const readableKnowledgeBaseIds = activeKnowledgeBases.map((base) => base.id);
-  const queryEmbedding = queryText?.trim()
-    ? await createKnowledgeEmbedding(queryText.trim(), "", { userId }).catch(
-        () => null,
-      )
+  const queryEmbeddingResult = queryText?.trim()
+    ? await createKnowledgeEmbeddingWithMetadata(queryText.trim(), "", {
+        userId,
+      }).catch(() => null)
     : null;
+  const queryEmbedding = queryEmbeddingResult?.embedding ?? null;
   const lexicalKnowledgeMatch = queryText?.trim()
     ? sql`to_tsvector('simple', ${knowledgeDocument.title} || ' ' || ${knowledgeDocument.content}) @@ plainto_tsquery('simple', ${queryText.trim()})`
     : null;
@@ -197,26 +209,76 @@ export async function loadChatContextStep(
       eq(memoryPreferenceTable.userId, userId),
     ),
   });
+  const pastMessageRank = queryText?.trim()
+    ? sql<number>`ts_rank(
+        to_tsvector(
+          'simple',
+          coalesce(${message.content}, '') || ' ' || coalesce(${message.parts}::text, '')
+        ),
+        plainto_tsquery('simple', ${queryText.trim()})
+      )`
+    : null;
   const pastMessages =
-    userMemoryPreference?.chatHistoryEnabled === false
-      ? []
-      : await db.query.message.findMany({
-          where: and(
-            eq(message.isDeleted, false),
-            not(eq(message.chatId, chatId)),
-            inArray(
-              message.chatId,
-              db
-                .select({ chatId: chatMember.chatId })
-                .from(chatMember)
-                .where(
-                  and(eq(chatMember.userId, userId), isNull(chatMember.leftAt)),
-                ),
+    userMemoryPreference?.chatHistoryEnabled !== false && pastMessageRank
+      ? await db
+          .select({
+            role: message.role,
+            parts: message.parts,
+            content: message.content,
+            chatId: chatTable.id,
+            chatTitle: chatTable.title,
+            createdAt: message.createdAt,
+            authorType: message.authorType,
+            userName: userTable.name,
+            agentName: agentTable.name,
+          })
+          .from(message)
+          .innerJoin(chatTable, eq(chatTable.id, message.chatId))
+          .innerJoin(chatMember, eq(chatMember.chatId, chatTable.id))
+          .leftJoin(
+            userTable,
+            and(
+              eq(message.authorType, "user"),
+              eq(message.authorId, userTable.id),
             ),
-          ),
-          orderBy: desc(message.createdAt),
-          limit: 30,
-        });
+          )
+          .leftJoin(
+            agentTable,
+            and(
+              eq(message.authorType, "agent"),
+              sql`${agentTable.id}::text = ${message.authorId}`,
+            ),
+          )
+          .where(
+            and(
+              eq(message.isDeleted, false),
+              not(eq(message.chatId, chatId)),
+              eq(chatTable.organizationId, chat.organizationId),
+              eq(chatTable.isDeleted, false),
+              eq(chatMember.userId, userId),
+              isNull(chatMember.leftAt),
+              sql`${pastMessageRank} > 0`,
+            ),
+          )
+          .orderBy(desc(pastMessageRank), desc(message.createdAt))
+          .limit(8)
+          .then((rows) =>
+            rows.map((row) => ({
+              role: row.role,
+              parts: row.parts,
+              content: row.content,
+              chatId: row.chatId,
+              chatTitle: row.chatTitle,
+              authorName:
+                row.authorType === "agent"
+                  ? (row.agentName ?? "Agent")
+                  : row.authorType === "system"
+                    ? "System"
+                    : (row.userName ?? "Workspace member"),
+              createdAt: row.createdAt,
+            })),
+          )
+      : [];
   const memoryScopeConditions = [
     ...(userMemoryPreference?.savedMemoryEnabled !== false
       ? [and(eq(memory.scope, "user"), eq(memory.userId, userId))]
@@ -234,17 +296,14 @@ export async function loadChatContextStep(
         ]
       : []),
   ];
-  const memories =
-    memoryScopeConditions.length === 0
-      ? []
-      : await db.query.memory.findMany({
-          where: and(
-            eq(memory.organizationId, chat.organizationId),
-            or(...memoryScopeConditions),
-          ),
-          orderBy: desc(memory.updatedAt),
-          limit: 200,
-        });
+  const memories = await retrieveMemories({
+    organizationId: chat.organizationId,
+    userId,
+    scopes: memoryScopeConditions,
+    query: queryText ?? "",
+    limit: 12,
+    queryEmbedding: queryEmbeddingResult,
+  });
   const publishedMcpIntegrations = await db.query.mcpIntegration.findMany({
     where: and(
       eq(mcpIntegration.organizationId, chat.organizationId),
@@ -336,6 +395,8 @@ export async function loadChatContextStep(
       canReadChatMemory,
       canWritePersonalMemory:
         userMemoryPreference?.savedMemoryEnabled !== false,
+      automaticManagementEnabled:
+        userMemoryPreference?.automaticManagementEnabled !== false,
       readableAgentIds,
     },
     knowledgeBaseIds: readableKnowledgeBaseIds,

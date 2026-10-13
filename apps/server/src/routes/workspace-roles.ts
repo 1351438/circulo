@@ -1,5 +1,10 @@
 import { db } from "@/db";
-import { member, workspaceRole, workspaceRolePermission } from "@/db/schema";
+import {
+  member,
+  organization,
+  workspaceRole,
+  workspaceRolePermission,
+} from "@/db/schema";
 import { adminRole, memberRole, ownerRole, statement } from "@/lib/auth";
 import { createRouter } from "@/lib/create-app";
 import {
@@ -16,7 +21,7 @@ import {
   NotFoundError,
 } from "@circulo-ai/types";
 import { zValidator } from "@hono/zod-validator";
-import { and, eq } from "drizzle-orm";
+import { and, eq, not, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 
@@ -335,11 +340,14 @@ router.patch(
       organizationId,
       c.var.apiKeyPermissions,
     );
+    const actorIsOwner = Boolean(
+      actorRole
+        ?.split(",")
+        .map((role) => role.trim())
+        .includes("owner"),
+    );
     const { id } = c.req.valid("param");
     const { roleKey } = c.req.valid("json");
-    if (roleKey === "owner" && actorRole !== "owner") {
-      throw new ForbiddenError("Only the owner can assign the owner role");
-    }
     const targetRole = await db.query.workspaceRole.findFirst({
       where: and(
         eq(workspaceRole.organizationId, organizationId),
@@ -357,10 +365,80 @@ router.patch(
       where: and(eq(member.id, id), eq(member.organizationId, organizationId)),
     });
     if (!existing) throw new NotFoundError("Workspace member not found");
-    if (existing.role === "owner" && actorRole !== "owner") {
-      throw new ForbiddenError("Only the owner can change the owner role");
+    const existingRoles = existing.role.split(",").map((role) => role.trim());
+    if (
+      (roleKey === "owner" || existingRoles.includes("owner")) &&
+      !actorIsOwner
+    ) {
+      throw new ForbiddenError(
+        "Only a workspace owner can change an owner's role or promote a new owner",
+      );
     }
-    await db.update(member).set({ role: roleKey }).where(eq(member.id, id));
+    await db.transaction(async (tx) => {
+      // Serialize ownership changes for this workspace so concurrent requests
+      // cannot both remove the final owner.
+      await tx
+        .select({ id: organization.id })
+        .from(organization)
+        .where(eq(organization.id, organizationId))
+        .for("update");
+
+      const currentActor = await tx.query.member.findFirst({
+        where: and(
+          eq(member.organizationId, organizationId),
+          eq(member.userId, c.var.user!.id),
+        ),
+      });
+      const currentTarget = await tx.query.member.findFirst({
+        where: and(
+          eq(member.organizationId, organizationId),
+          eq(member.id, id),
+        ),
+      });
+      if (!currentActor || !currentTarget) {
+        throw new NotFoundError("Workspace member not found");
+      }
+      const currentActorIsOwner = currentActor.role
+        .split(",")
+        .map((role) => role.trim())
+        .includes("owner");
+      const currentTargetIsOwner = currentTarget.role
+        .split(",")
+        .map((role) => role.trim())
+        .includes("owner");
+      if (
+        (roleKey === "owner" || currentTargetIsOwner) &&
+        !currentActorIsOwner
+      ) {
+        throw new ForbiddenError(
+          "Only a workspace owner can change an owner's role or promote a new owner",
+        );
+      }
+
+      if (currentTargetIsOwner && roleKey !== "owner") {
+        const [anotherOwner] = await tx
+          .select({ id: member.id })
+          .from(member)
+          .where(
+            and(
+              eq(member.organizationId, organizationId),
+              not(eq(member.id, currentTarget.id)),
+              sql`position(',owner,' in ',' || replace(${member.role}, ' ', '') || ',') > 0`,
+            ),
+          )
+          .limit(1);
+        if (!anotherOwner) {
+          throw new BadRequestError(
+            "Promote another member to owner before changing the last owner's role",
+          );
+        }
+      }
+
+      await tx
+        .update(member)
+        .set({ role: roleKey })
+        .where(eq(member.id, currentTarget.id));
+    });
     return c.json({ updated: true, roleKey });
   },
 );

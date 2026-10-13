@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import type { OrganizationAuthClient } from "@better-auth-ui/core/plugins/organization";
 import { useAuth, useAuthPlugin } from "@better-auth-ui/react";
 import { useDeleteOrganization } from "@better-auth-ui/react/plugins/organization";
@@ -65,7 +66,7 @@ export function DeleteOrganizationDialog({
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <FormRoot onSubmit={handleSubmit} className="flex flex-col gap-6">
           <AlertDialogHeader>
             <AlertDialogMedia className="bg-destructive/10 text-destructive">
               <TriangleAlert />
@@ -97,7 +98,7 @@ export function DeleteOrganizationDialog({
               {organizationLocalization.deleteOrganization}
             </Button>
           </AlertDialogFooter>
-        </form>
+        </FormRoot>
       </AlertDialogContent>
     </AlertDialog>
   );

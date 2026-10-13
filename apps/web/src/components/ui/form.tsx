@@ -1,5 +1,6 @@
 "use client";
 
+import { Form as FormPrimitive } from "@base-ui/react/form";
 import * as React from "react";
 import {
   Controller,
@@ -15,6 +16,12 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 const Form = FormProvider;
+const FormRoot = React.forwardRef<HTMLFormElement, FormPrimitive.Props>(
+  ({ noValidate, ...props }, ref) => (
+    <FormPrimitive noValidate={noValidate ?? false} {...props} ref={ref} />
+  ),
+);
+FormRoot.displayName = "FormRoot";
 
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
@@ -169,5 +176,6 @@ export {
   FormItem,
   FormLabel,
   FormMessage,
+  FormRoot,
   useFormField,
 };

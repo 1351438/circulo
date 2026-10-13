@@ -1,4 +1,5 @@
-import { db, memory, memoryPreference } from "@/db";
+import { db, memory, memoryHistory, memoryPreference } from "@/db";
+import { createMemoryEmbedding } from "@/lib/memory/retrieval";
 import type { ActorContext, ChatMessage } from "@/lib/types";
 import type { Tool, UIMessageStreamWriter } from "ai";
 import { tool } from "ai";
@@ -42,12 +43,31 @@ export function rememberMemory(params: {
           eq(memory.key, input.key),
         ),
       });
+      const embedding = await createMemoryEmbedding({
+        key: input.key,
+        content: input.content,
+        userId: params.session.userId,
+      });
+      if (existing) {
+        await db.insert(memoryHistory).values({
+          memoryId: existing.id,
+          organizationId: existing.organizationId,
+          userId: existing.userId ?? existing.createdBy,
+          key: existing.key,
+          content: existing.content,
+          metadata: existing.metadata,
+          importance: existing.importance,
+        });
+      }
       const [saved] = existing
         ? await db
             .update(memory)
             .set({
               content: input.content,
               importance: input.importance,
+              embedding: embedding?.embedding ?? null,
+              embeddingModel: embedding?.model ?? null,
+              embeddingUpdatedAt: embedding ? new Date() : null,
               sourceType: "chat",
               sourceId: params.chatId,
               updatedAt: new Date(),
@@ -65,6 +85,9 @@ export function rememberMemory(params: {
               scope: "user",
               key: input.key,
               content: input.content,
+              embedding: embedding?.embedding ?? null,
+              embeddingModel: embedding?.model ?? null,
+              embeddingUpdatedAt: embedding ? new Date() : null,
               importance: input.importance,
               sourceType: "chat",
               sourceId: params.chatId,

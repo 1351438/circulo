@@ -16,11 +16,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FormRoot } from "@/components/ui/form";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { Input } from "@/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
@@ -774,7 +776,7 @@ export const PromptInput = ({
   // Render with or without local provider
   const inner = (
     <>
-      <input
+      <Input
         accept={accept}
         aria-label="Upload files"
         className="hidden"
@@ -784,7 +786,7 @@ export const PromptInput = ({
         title="Upload files"
         type="file"
       />
-      <form
+      <FormRoot
         className={cn("w-full", className)}
         onSubmit={handleSubmit}
         ref={formRef}
@@ -793,7 +795,7 @@ export const PromptInput = ({
         <InputGroup className="min-w-0 overflow-visible border-border bg-sidebar shadow-xs transition-colors focus-within:border-ring/70">
           {children}
         </InputGroup>
-      </form>
+      </FormRoot>
     </>
   );
 

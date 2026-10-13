@@ -66,6 +66,19 @@ export async function createKnowledgeEmbedding(
   content: string,
   options?: { userId?: string },
 ): Promise<number[] | null> {
+  const result = await createKnowledgeEmbeddingWithMetadata(
+    title,
+    content,
+    options,
+  );
+  return result?.embedding ?? null;
+}
+
+export async function createKnowledgeEmbeddingWithMetadata(
+  title: string,
+  content: string,
+  options?: { userId?: string },
+): Promise<{ embedding: number[]; model: string } | null> {
   const config = await getEmbeddingConfig(options?.userId);
   if (!config) return null;
 
@@ -108,7 +121,10 @@ export async function createKnowledgeEmbedding(
       `Embedding provider returned ${vectors.length} valid vectors for ${chunks.length} chunks`,
     );
   }
-  return averageKnowledgeEmbeddings(vectors);
+  return {
+    embedding: averageKnowledgeEmbeddings(vectors),
+    model: config.model,
+  };
 }
 
 export async function refreshKnowledgeDocumentEmbedding(params: {
@@ -117,21 +133,18 @@ export async function refreshKnowledgeDocumentEmbedding(params: {
   content: string;
   userId?: string;
 }): Promise<boolean> {
-  const config = await getEmbeddingConfig(params.userId);
-  if (!config) return false;
-
-  const embedding = await createKnowledgeEmbedding(
+  const result = await createKnowledgeEmbeddingWithMetadata(
     params.title,
     params.content,
     params.userId ? { userId: params.userId } : undefined,
   );
-  if (!embedding) return false;
+  if (!result) return false;
 
   await db
     .update(knowledgeDocument)
     .set({
-      embedding,
-      embeddingModel: config.model,
+      embedding: result.embedding,
+      embeddingModel: result.model,
       embeddingUpdatedAt: new Date(),
       updatedAt: new Date(),
     })

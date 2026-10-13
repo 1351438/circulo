@@ -16,6 +16,7 @@ import {
   useId,
   useState,
 } from "react";
+import { Input } from "../ui/input";
 import { Spinner } from "../ui/spinner";
 
 interface CustomComponentProps {
@@ -142,7 +143,7 @@ export function FileInput({
       onDragLeave={handleDropLeave}
       onDrop={handleDrop}
     >
-      <input
+      <Input
         id={id}
         type="file"
         value=""

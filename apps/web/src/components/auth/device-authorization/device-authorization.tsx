@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import type {
   DeviceAuthorizationAuthClient,
   DeviceAuthorizationLocalization,
@@ -335,7 +336,10 @@ function DeviceCodeForm({
       </CardHeader>
 
       <CardContent>
-        <form aria-label={localization.deviceAuthorization} onSubmit={onSubmit}>
+        <FormRoot
+          aria-label={localization.deviceAuthorization}
+          onSubmit={onSubmit}
+        >
           <FieldGroup>
             <Field data-invalid={Boolean(codeError)}>
               <FieldLabel htmlFor="device-code">
@@ -391,7 +395,7 @@ function DeviceCodeForm({
               {localization.continue}
             </Button>
           </FieldGroup>
-        </form>
+        </FormRoot>
       </CardContent>
     </Card>
   );

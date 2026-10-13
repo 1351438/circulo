@@ -488,6 +488,37 @@ html[data-circulo-desktop="true"] {
   );
 }
 
+/* Keep the illustrated chat wallpaper in light mode while giving it enough
+   contrast reduction to keep message surfaces and controls easy to scan. */
+html:not(.dark) .bg-chat {
+  background:
+    linear-gradient(
+      color-mix(in oklch, var(--background) 86%, transparent),
+      color-mix(in oklch, var(--background) 86%, transparent)
+    ),
+    url("/chat-bg.svg") fixed,
+    radial-gradient(
+      ellipse 100% 100% at bottom right,
+      color-mix(in oklch, var(--chart-4) 24%, var(--background)),
+      transparent
+    ),
+    radial-gradient(
+      ellipse 100% 100% at bottom left,
+      color-mix(in oklch, var(--chart-3) 18%, var(--background)),
+      transparent
+    ),
+    radial-gradient(
+      ellipse 100% 100% at top right,
+      color-mix(in oklch, var(--chart-2) 18%, var(--background)),
+      transparent
+    ),
+    radial-gradient(
+      ellipse 100% 100% at top left,
+      color-mix(in oklch, var(--chart-1) 16%, var(--background)),
+      transparent
+    );
+}
+
 #circulo-desktop-window-toolbar {
   display: none;
 }

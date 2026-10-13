@@ -1,6 +1,12 @@
 "use client";
 
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -384,36 +390,56 @@ export function WorkspacePermissions() {
                 Choose the smallest set of capabilities this role needs.
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <Accordion
+              multiple
+              defaultValue={[]}
+              className="grid gap-2 overflow-visible rounded-none border-0 sm:grid-cols-2"
+            >
               {groupedPermissions.map(([resource, permissions]) => (
-                <div className="rounded-xl border p-3" key={resource}>
-                  <p className="mb-2 text-sm font-medium">
-                    {titleCase(resource)}
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {permissions.map((permission) => {
-                      const key = permissionKey(permission);
-                      return (
-                        <label
-                          className="flex min-w-0 items-center gap-2 text-sm"
-                          key={key}
-                        >
-                          <Checkbox
-                            checked={selected.includes(key)}
-                            onCheckedChange={(checked) =>
-                              togglePermission(permission, checked === true)
-                            }
-                          />
-                          <span className="break-words">
-                            {titleCase(permission.action)}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
+                <AccordionItem
+                  className="rounded-xl border bg-card data-open:bg-muted/30"
+                  key={resource}
+                  value={resource}
+                >
+                  <AccordionTrigger className="items-center px-3 py-2.5 hover:no-underline">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span>{titleCase(resource)}</span>
+                      <Badge className="font-normal" variant="secondary">
+                        {
+                          permissions.filter((permission) =>
+                            selected.includes(permissionKey(permission)),
+                          ).length
+                        }{" "}
+                        / {permissions.length}
+                      </Badge>
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-3">
+                    <div className="flex flex-col gap-2">
+                      {permissions.map((permission) => {
+                        const key = permissionKey(permission);
+                        return (
+                          <label
+                            className="flex min-w-0 items-center gap-2 text-sm"
+                            key={key}
+                          >
+                            <Checkbox
+                              checked={selected.includes(key)}
+                              onCheckedChange={(checked) =>
+                                togglePermission(permission, checked === true)
+                              }
+                            />
+                            <span className="break-words">
+                              {titleCase(permission.action)}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
               ))}
-            </div>
+            </Accordion>
           </div>
           <DialogFooter>
             <Button

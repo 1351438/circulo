@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import { authMutationKeys } from "@better-auth-ui/core";
 import type { MagicLinkAuthClient } from "@better-auth-ui/core/plugins/magic-link";
 import { useAuth, useAuthPlugin } from "@better-auth-ui/react";
@@ -112,7 +113,7 @@ export function MagicLink({
             </>
           )}
 
-          <form onSubmit={handleSubmit}>
+          <FormRoot onSubmit={handleSubmit}>
             <FieldGroup>
               <Field data-invalid={!!fieldErrors.email}>
                 <FieldLabel htmlFor="email">
@@ -167,7 +168,7 @@ export function MagicLink({
                 )}
               </div>
             </FieldGroup>
-          </form>
+          </FormRoot>
 
           {socialPosition === "bottom" && (
             <>

@@ -14,6 +14,7 @@ import {
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { FormRoot } from "@/components/ui/form";
 import {
   InputGroup,
   InputGroupAddon,
@@ -122,7 +123,7 @@ export function DeleteAccount({ className }: DeleteAccountProps) {
           </AlertDialogTrigger>
 
           <AlertDialogContent>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            <FormRoot onSubmit={handleSubmit} className="flex flex-col gap-6">
               <AlertDialogHeader>
                 <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
                   <TriangleAlert />
@@ -197,7 +198,7 @@ export function DeleteAccount({ className }: DeleteAccountProps) {
                   {deleteUserLocalization.deleteAccount}
                 </Button>
               </AlertDialogFooter>
-            </form>
+            </FormRoot>
           </AlertDialogContent>
         </AlertDialog>
       </CardContent>

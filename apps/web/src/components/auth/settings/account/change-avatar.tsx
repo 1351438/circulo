@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { fileToAvatarDataUrl } from "@better-auth-ui/core";
@@ -92,7 +93,7 @@ export function ChangeAvatar({ className }: ChangeAvatarProps) {
     <Field className={className}>
       <FieldLabel>{localization.settings.avatar}</FieldLabel>
 
-      <input
+      <Input
         ref={fileInputRef}
         type="file"
         accept="image/*"

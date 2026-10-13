@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import { getAuthLinkURL } from "@better-auth-ui/core";
 import type { EmailOtpAuthClient } from "@better-auth-ui/core/plugins/email-otp";
 import { useAuth, useAuthPlugin, useFetchOptions } from "@better-auth-ui/react";
@@ -86,7 +87,7 @@ export function ForgotPasswordOtp({ className }: ForgotPasswordOtpProps) {
       </CardHeader>
 
       <CardContent>
-        <form onSubmit={handleSubmit}>
+        <FormRoot onSubmit={handleSubmit}>
           <FieldGroup>
             <Field data-invalid={!!fieldErrors.email}>
               <FieldLabel htmlFor="email">{localization.auth.email}</FieldLabel>
@@ -124,7 +125,7 @@ export function ForgotPasswordOtp({ className }: ForgotPasswordOtpProps) {
               {emailOtpLocalization.sendCode}
             </Button>
           </FieldGroup>
-        </form>
+        </FormRoot>
 
         <div className="mt-4 flex w-full flex-col items-center gap-3">
           <FieldDescription className="text-center">

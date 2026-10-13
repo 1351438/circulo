@@ -17,6 +17,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import { FormRoot } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -176,7 +177,7 @@ export function CreateApiKeyDialog({
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <FormRoot onSubmit={handleSubmit} className="flex flex-col gap-6">
             <DialogHeader>
               <DialogTitle>
                 <Key />
@@ -359,7 +360,7 @@ export function CreateApiKeyDialog({
                 {apiKeyLocalization.createApiKey}
               </Button>
             </DialogFooter>
-          </form>
+          </FormRoot>
         </DialogContent>
       </Dialog>
 

@@ -850,9 +850,9 @@ function TaskEditor({
                   <SelectGroup>
                     {conversations.map((conversation) => (
                       <SelectItem key={conversation.id} value={conversation.id}>
-                        {conversation.title ??
-                          conversation.name ??
-                          conversation.id}
+                        {conversation.title?.trim() ||
+                          conversation.name?.trim() ||
+                          `Untitled chat (${conversation.id.slice(0, 6)})`}
                       </SelectItem>
                     ))}
                   </SelectGroup>

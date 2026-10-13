@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import { getAuthLinkURL } from "@better-auth-ui/core";
 import { useAuth, useResetPassword } from "@better-auth-ui/react";
 import { Eye, EyeOff } from "lucide-react";
@@ -110,7 +111,7 @@ export function ResetPassword({ className }: ResetPasswordProps) {
       </CardHeader>
 
       <CardContent>
-        <form onSubmit={handleSubmit}>
+        <FormRoot onSubmit={handleSubmit}>
           <FieldGroup>
             <Field data-invalid={!!fieldErrors.password}>
               <FieldLabel htmlFor="password">
@@ -266,7 +267,7 @@ export function ResetPassword({ className }: ResetPasswordProps) {
               </Button>
             </div>
           </FieldGroup>
-        </form>
+        </FormRoot>
 
         <div className="mt-4 flex w-full flex-col items-center gap-3">
           <FieldDescription className="text-center">

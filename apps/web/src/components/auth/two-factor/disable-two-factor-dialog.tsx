@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import type { TwoFactorAuthClient } from "@better-auth-ui/core/plugins/two-factor";
 import { useAuth, useAuthPlugin } from "@better-auth-ui/react";
 import { useDisableTwoFactor } from "@better-auth-ui/react/plugins/two-factor";
@@ -67,7 +68,7 @@ export function DisableTwoFactorDialog({
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <FormRoot onSubmit={handleSubmit} className="flex flex-col gap-6">
           <AlertDialogHeader>
             <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
               <ShieldAlert />
@@ -116,7 +117,7 @@ export function DisableTwoFactorDialog({
               {twoFactorLocalization.disableTwoFactor}
             </Button>
           </AlertDialogFooter>
-        </form>
+        </FormRoot>
       </AlertDialogContent>
     </AlertDialog>
   );

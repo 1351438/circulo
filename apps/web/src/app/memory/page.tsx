@@ -22,6 +22,13 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Empty,
   EmptyDescription,
   EmptyHeader,
@@ -35,6 +42,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import { FormRoot } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -46,7 +54,19 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { WorkspaceShell } from "@/components/workspace/workspace-shell";
-import { Brain, Check, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import {
+  Brain,
+  Check,
+  History as HistoryIcon,
+  Pencil,
+  Pin,
+  Plus,
+  RotateCcw,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
+import Link from "next/link";
 import { type FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
@@ -61,7 +81,19 @@ type Memory = {
   chatId: string | null;
   agentId: string | null;
   userId: string | null;
+  importance: number;
+  isPinned: boolean;
+  sourceType: string;
+  sourceId: string | null;
+  createdAt: string;
   updatedAt?: string;
+};
+type MemoryHistoryEntry = {
+  id: string;
+  key: string;
+  content: string;
+  importance: number;
+  createdAt: string;
 };
 type ChatOption = { id: string; title: string };
 type AgentOption = { id: string; name: string; model?: string };
@@ -125,6 +157,20 @@ const scopeLabel: Record<MemoryScope, string> = {
   agent: "Agent",
 };
 
+function formatMemoryDate(value: string) {
+  const timestamp = new Date(value);
+  return Number.isNaN(timestamp.getTime())
+    ? "Date unavailable"
+    : timestamp.toISOString().slice(0, 10);
+}
+
+function formatMemoryDateTime(value: string) {
+  const timestamp = new Date(value);
+  return Number.isNaN(timestamp.getTime())
+    ? "Date unavailable"
+    : `${timestamp.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+}
+
 function MemoryPageContent() {
   const {
     data: memories,
@@ -152,6 +198,15 @@ function MemoryPageContent() {
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Memory | null>(null);
+  const [historyTarget, setHistoryTarget] = useState<Memory | null>(null);
+  const {
+    data: history,
+    error: historyError,
+    mutate: mutateHistory,
+  } = useSWR<MemoryHistoryEntry[]>(
+    historyTarget ? `/api/memories/${historyTarget.id}/history` : null,
+    fetcher,
+  );
   const filteredMemories = useMemo(() => {
     const query = search.trim().toLowerCase();
     return (memories ?? []).filter(
@@ -261,6 +316,38 @@ function MemoryPageContent() {
   const remove = async (memory: Memory) => {
     setDeleteTarget(memory);
   };
+  const togglePinned = async (memory: Memory) => {
+    try {
+      await request(`/api/memories/${memory.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isPinned: !memory.isPinned }),
+      });
+      await mutate();
+      toast.success(memory.isPinned ? "Memory unpinned" : "Memory pinned");
+    } catch (pinError) {
+      toast.error(
+        pinError instanceof Error ? pinError.message : "Unable to update pin",
+      );
+    }
+  };
+  const restore = async (historyId: string) => {
+    if (!historyTarget) return;
+    try {
+      await request(`/api/memories/${historyTarget.id}/restore`, {
+        method: "POST",
+        body: JSON.stringify({ historyId }),
+      });
+      await Promise.all([mutate(), mutateHistory()]);
+      toast.success("Memory version restored");
+      setHistoryTarget(null);
+    } catch (restoreError) {
+      toast.error(
+        restoreError instanceof Error
+          ? restoreError.message
+          : "Unable to restore memory",
+      );
+    }
+  };
   const confirmRemove = async () => {
     if (!deleteTarget) return;
     try {
@@ -317,6 +404,9 @@ function MemoryPageContent() {
                       <Badge variant="secondary">
                         {scopeLabel[memory.scope]}
                       </Badge>
+                      {memory.isPinned && (
+                        <Badge variant="outline">Pinned</Badge>
+                      )}
                     </div>
                     {editingId === memory.id ? (
                       <div className="mt-3 flex flex-col gap-2">
@@ -345,13 +435,55 @@ function MemoryPageContent() {
                         </div>
                       </div>
                     ) : (
-                      <p className="mt-1 text-sm whitespace-pre-wrap text-muted-foreground">
-                        {memory.content}
-                      </p>
+                      <>
+                        <p className="mt-1 text-sm whitespace-pre-wrap text-muted-foreground">
+                          {memory.content}
+                        </p>
+                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                          <span>
+                            Updated{" "}
+                            {formatMemoryDate(
+                              memory.updatedAt ?? memory.createdAt,
+                            )}
+                          </span>
+                          {memory.sourceType === "chat" && memory.sourceId && (
+                            <Link
+                              className="underline underline-offset-2 hover:text-foreground"
+                              href={`/chat/${memory.sourceId}`}
+                            >
+                              View source chat
+                            </Link>
+                          )}
+                        </div>
+                      </>
                     )}
                   </div>
                   {editingId !== memory.id && (
                     <div className="flex shrink-0 gap-1">
+                      <Button
+                        aria-label={
+                          memory.isPinned
+                            ? `Unpin ${memory.key}`
+                            : `Pin ${memory.key}`
+                        }
+                        onClick={() => void togglePinned(memory)}
+                        size="icon"
+                        variant="ghost"
+                      >
+                        <Pin
+                          className={
+                            memory.isPinned ? "size-4 fill-current" : "size-4"
+                          }
+                        />
+                      </Button>
+                      <Button
+                        aria-label={`View history for ${memory.key}`}
+                        onClick={() => setHistoryTarget(memory)}
+                        size="icon"
+                        variant="ghost"
+                      >
+                        <HistoryIcon className="size-4" />
+                      </Button>
                       <Button
                         aria-label={`Edit ${memory.key}`}
                         onClick={() => {
@@ -402,7 +534,7 @@ function MemoryPageContent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form className="flex flex-col gap-5" onSubmit={save}>
+              <FormRoot className="flex flex-col gap-5" onSubmit={save}>
                 <FieldGroup>
                   <Field data-invalid={Boolean(formErrors.scope)}>
                     <FieldLabel htmlFor="memory-scope">
@@ -461,7 +593,8 @@ function MemoryPageContent() {
                           <SelectGroup>
                             {(chatHistory?.chats ?? []).map((chat) => (
                               <SelectItem key={chat.id} value={chat.id}>
-                                {chat.title}
+                                {chat.title?.trim() ||
+                                  `Untitled chat (${chat.id.slice(0, 6)})`}
                               </SelectItem>
                             ))}
                           </SelectGroup>
@@ -563,7 +696,7 @@ function MemoryPageContent() {
                   <Plus data-icon="inline-start" />{" "}
                   {saving ? "Saving…" : "Save memory"}
                 </Button>
-              </form>
+              </FormRoot>
               <div className="mt-6 border-t pt-5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -596,7 +729,7 @@ function MemoryPageContent() {
                         Reference saved memories
                       </span>
                       <span className="block text-muted-foreground">
-                        Use personal facts across conversations.
+                        Use and save personal facts across conversations.
                       </span>
                     </span>
                   </label>
@@ -634,7 +767,8 @@ function MemoryPageContent() {
                         Automatically manage memories
                       </span>
                       <span className="block text-muted-foreground">
-                        Keep the summary current as memories change.
+                        Save durable preferences automatically. You can review,
+                        edit, pin, or forget them here.
                       </span>
                     </span>
                   </label>
@@ -649,6 +783,66 @@ function MemoryPageContent() {
           </Card>
         </div>
       </WorkspaceShell>
+      <Dialog
+        onOpenChange={(open) => !open && setHistoryTarget(null)}
+        open={Boolean(historyTarget)}
+      >
+        <DialogContent className="max-h-[min(80vh,48rem)] overflow-y-auto sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Memory history</DialogTitle>
+            <DialogDescription>
+              Earlier versions of {historyTarget?.key}. Restore a version to
+              make it current.
+            </DialogDescription>
+          </DialogHeader>
+          {historyError && (
+            <p className="text-sm text-destructive">
+              Unable to load memory history.
+            </p>
+          )}
+          {history?.length ? (
+            <div className="flex flex-col gap-3">
+              {history.map((entry) => (
+                <Card key={entry.id}>
+                  <CardHeader className="gap-1 p-4">
+                    <CardTitle className="text-sm">{entry.key}</CardTitle>
+                    <CardDescription>
+                      {formatMemoryDateTime(entry.createdAt)}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-3 px-4 pb-4">
+                    <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+                      {entry.content}
+                    </p>
+                    <Button
+                      className="self-start"
+                      onClick={() => void restore(entry.id)}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <RotateCcw data-icon="inline-start" /> Restore version
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            !historyError && (
+              <Empty className="min-h-40 border border-dashed">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <HistoryIcon />
+                  </EmptyMedia>
+                  <EmptyTitle>No earlier versions</EmptyTitle>
+                  <EmptyDescription>
+                    Changes to this memory will be available here.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            )
+          )}
+        </DialogContent>
+      </Dialog>
       <AlertDialog
         open={Boolean(deleteTarget)}
         onOpenChange={(open) => !open && setDeleteTarget(null)}

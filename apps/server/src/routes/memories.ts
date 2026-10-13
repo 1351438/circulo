@@ -8,6 +8,7 @@ import {
   memoryPreference,
 } from "@/db/schema";
 import { createRouter } from "@/lib/create-app";
+import { createMemoryEmbedding } from "@/lib/memory/retrieval";
 import {
   hasPermissionForUser,
   isMemberOf,
@@ -20,7 +21,7 @@ import {
   NotFoundError,
 } from "@circulo-ai/types";
 import { zValidator } from "@hono/zod-validator";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import type { Context } from "hono";
 import { z } from "zod";
 import type { AppEnv } from "../lib/create-app";
@@ -74,12 +75,15 @@ async function assertTargetAccess(
   organizationId: string,
   body: z.infer<typeof memoryBody>,
   apiKeyPermissions?: ApiKeyPermissions,
+  personalMemoryOwnerId?: string | null,
 ) {
   if (body.scope === "user") {
     if (body.chatId || body.agentId)
       throw new BadRequestError(
         "Personal memory cannot have a chat or agent target",
       );
+    if (personalMemoryOwnerId !== undefined && personalMemoryOwnerId !== userId)
+      throw new ForbiddenError("You can only access your personal memories");
     return;
   }
   if (body.scope === "organization") {
@@ -241,6 +245,12 @@ async function snapshotMemory(existing: typeof memory.$inferSelect) {
   });
 }
 
+function memoryResponse(row: typeof memory.$inferSelect | undefined) {
+  if (!row) throw new Error("Memory operation did not return a record");
+  const { embedding: _embedding, ...visibleMemory } = row;
+  return visibleMemory;
+}
+
 router.get("/memories/preferences", requireAuth, async (c) => {
   const organizationId = await activeOrganization(c);
   return c.json(await getOrCreatePreference(organizationId, c.var.user!.id));
@@ -353,22 +363,95 @@ router.get("/memories", requireAuth, async (c) => {
   }
   const conditions = [eq(memory.organizationId, organizationId)];
   if (query.scope) conditions.push(eq(memory.scope, query.scope));
-  if (!query.scope && !query.chatId && !query.agentId) {
-    conditions.push(
-      eq(memory.scope, "user"),
-      eq(memory.userId, c.var.user!.id),
-    );
-  }
   if (query.scope === "user")
     conditions.push(eq(memory.userId, c.var.user!.id));
   if (query.chatId) conditions.push(eq(memory.chatId, query.chatId));
   if (query.agentId) conditions.push(eq(memory.agentId, query.agentId));
+
+  if (!query.scope && !query.chatId && !query.agentId) {
+    const canReadWorkspaceMemory = await hasPermissionForUser(
+      c.var.user!.id,
+      organizationId,
+      "memory",
+      "read",
+      c.var.apiKeyPermissions,
+    );
+    const canManageWorkspaceMemory = await hasPermissionForUser(
+      c.var.user!.id,
+      organizationId,
+      "memory",
+      "manage",
+      c.var.apiKeyPermissions,
+    );
+    const [chatMemberships, manageableAgents] = await Promise.all([
+      db
+        .select({ chatId: chatMember.chatId })
+        .from(chatMember)
+        .innerJoin(chat, eq(chat.id, chatMember.chatId))
+        .where(
+          and(
+            eq(chat.organizationId, organizationId),
+            eq(chat.isDeleted, false),
+            eq(chatMember.userId, c.var.user!.id),
+            isNull(chatMember.leftAt),
+            canReadWorkspaceMemory
+              ? undefined
+              : or(
+                  eq(chatMember.role, "owner"),
+                  eq(chatMember.role, "admin"),
+                  eq(chatMember.canManageKnowledge, true),
+                ),
+          ),
+        ),
+      db
+        .select({ id: agent.id })
+        .from(agent)
+        .where(
+          and(
+            eq(agent.organizationId, organizationId),
+            eq(agent.isArchived, false),
+            canManageWorkspaceMemory
+              ? undefined
+              : eq(agent.createdBy, c.var.user!.id),
+          ),
+        ),
+    ]);
+    const readableScopes = [
+      and(eq(memory.scope, "user"), eq(memory.userId, c.var.user!.id)),
+      ...(canReadWorkspaceMemory ? [eq(memory.scope, "organization")] : []),
+      ...(chatMemberships.length
+        ? [
+            and(
+              eq(memory.scope, "chat"),
+              inArray(
+                memory.chatId,
+                chatMemberships.map((membership) => membership.chatId),
+              ),
+            ),
+          ]
+        : []),
+      ...(manageableAgents.length
+        ? [
+            and(
+              eq(memory.scope, "agent"),
+              inArray(
+                memory.agentId,
+                manageableAgents.map((item) => item.id),
+              ),
+            ),
+          ]
+        : []),
+    ];
+    conditions.push(or(...readableScopes)!);
+  }
   return c.json(
-    await db.query.memory.findMany({
-      where: and(...conditions),
-      orderBy: desc(memory.updatedAt),
-      limit: 200,
-    }),
+    (
+      await db.query.memory.findMany({
+        where: and(...conditions),
+        orderBy: [desc(memory.isPinned), desc(memory.updatedAt)],
+        limit: 200,
+      })
+    ).map(memoryResponse),
   );
 });
 
@@ -395,6 +478,11 @@ router.post(
     const existing = await db.query.memory.findFirst({
       where: and(...conditions, eq(memory.key, body.key)),
     });
+    const embedding = await createMemoryEmbedding({
+      key: body.key,
+      content: body.content,
+      userId: c.var.user!.id,
+    });
     if (existing) {
       await snapshotMemory(existing);
       const [updated] = await db
@@ -402,6 +490,10 @@ router.post(
         .set({
           content: body.content,
           metadata: body.metadata ?? {},
+          importance: body.importance ?? existing.importance,
+          embedding: embedding?.embedding ?? null,
+          embeddingModel: embedding?.model ?? null,
+          embeddingUpdatedAt: embedding ? new Date() : null,
           updatedAt: new Date(),
         })
         .where(eq(memory.id, existing.id))
@@ -409,7 +501,7 @@ router.post(
       if (body.scope === "user") {
         await refreshMemorySummaryWhenEnabled(organizationId, c.var.user!.id);
       }
-      return c.json(updated);
+      return c.json(memoryResponse(updated));
     }
     const [created] = await db
       .insert(memory)
@@ -423,6 +515,9 @@ router.post(
         content: body.content,
         metadata: body.metadata ?? {},
         importance: body.importance ?? 50,
+        embedding: embedding?.embedding ?? null,
+        embeddingModel: embedding?.model ?? null,
+        embeddingUpdatedAt: embedding ? new Date() : null,
         sourceType: body.sourceType ?? "manual",
         sourceId: body.sourceId ?? null,
         userId: body.scope === "user" ? c.var.user!.id : null,
@@ -431,7 +526,7 @@ router.post(
     if (body.scope === "user") {
       await refreshMemorySummaryWhenEnabled(organizationId, c.var.user!.id);
     }
-    return c.json(created, 201);
+    return c.json(memoryResponse(created), 201);
   },
 );
 
@@ -458,6 +553,7 @@ router.get(
         content: existing.content,
       },
       c.var.apiKeyPermissions,
+      existing.userId,
     );
     return c.json(
       await db.query.memoryHistory.findMany({
@@ -496,6 +592,7 @@ router.post(
         content: existing.content,
       },
       c.var.apiKeyPermissions,
+      existing.userId,
     );
     const history = await db.query.memoryHistory.findFirst({
       where: and(
@@ -505,6 +602,11 @@ router.post(
       ),
     });
     if (!history) throw new NotFoundError("Memory history entry not found");
+    const embedding = await createMemoryEmbedding({
+      key: history.key,
+      content: history.content,
+      userId: c.var.user!.id,
+    });
     await snapshotMemory(existing);
     const [restored] = await db
       .update(memory)
@@ -513,6 +615,9 @@ router.post(
         content: history.content,
         metadata: history.metadata,
         importance: history.importance,
+        embedding: embedding?.embedding ?? null,
+        embeddingModel: embedding?.model ?? null,
+        embeddingUpdatedAt: embedding ? new Date() : null,
         updatedAt: new Date(),
       })
       .where(eq(memory.id, id))
@@ -520,7 +625,7 @@ router.post(
     if (existing.scope === "user") {
       await refreshMemorySummaryWhenEnabled(organizationId, c.var.user!.id);
     }
-    return c.json(restored);
+    return c.json(memoryResponse(restored));
   },
 );
 
@@ -530,12 +635,16 @@ router.patch(
   zValidator("param", idParams),
   zValidator(
     "json",
-    z.object({
-      content: z.string().trim().min(1).max(20_000),
-      importance: z.number().int().min(0).max(100).optional(),
-      isPinned: z.boolean().optional(),
-      metadata: z.record(z.string(), z.unknown()).optional(),
-    }),
+    z
+      .object({
+        content: z.string().trim().min(1).max(20_000).optional(),
+        importance: z.number().int().min(0).max(100).optional(),
+        isPinned: z.boolean().optional(),
+        metadata: z.record(z.string(), z.unknown()).optional(),
+      })
+      .refine((changes) => Object.keys(changes).length > 0, {
+        message: "Provide at least one memory field to update",
+      }),
   ),
   async (c) => {
     const organizationId = await activeOrganization(c);
@@ -557,17 +666,44 @@ router.patch(
         content: existing.content,
       },
       c.var.apiKeyPermissions,
+      existing.userId,
     );
-    await snapshotMemory(existing);
+    const changes = c.req.valid("json");
+    const nextContent = changes.content ?? existing.content;
+    const contentChanged = nextContent !== existing.content;
+    const embedding = contentChanged
+      ? await createMemoryEmbedding({
+          key: existing.key,
+          content: nextContent,
+          userId: c.var.user!.id,
+        })
+      : undefined;
+    if (
+      contentChanged ||
+      changes.importance !== undefined ||
+      changes.metadata !== undefined
+    ) {
+      await snapshotMemory(existing);
+    }
     const [updated] = await db
       .update(memory)
-      .set({ ...c.req.valid("json"), updatedAt: new Date() })
+      .set({
+        ...changes,
+        ...(contentChanged
+          ? {
+              embedding: embedding?.embedding ?? null,
+              embeddingModel: embedding?.model ?? null,
+              embeddingUpdatedAt: embedding ? new Date() : null,
+            }
+          : {}),
+        updatedAt: new Date(),
+      })
       .where(eq(memory.id, id))
       .returning();
     if (existing.scope === "user") {
       await refreshMemorySummaryWhenEnabled(organizationId, c.var.user!.id);
     }
-    return c.json(updated);
+    return c.json(memoryResponse(updated));
   },
 );
 
@@ -595,6 +731,7 @@ router.delete(
         content: existing.content,
       },
       c.var.apiKeyPermissions,
+      existing.userId,
     );
     await db.delete(memory).where(eq(memory.id, id));
     if (existing.scope === "user") {

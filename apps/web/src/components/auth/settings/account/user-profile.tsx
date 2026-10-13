@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import {
   type AdditionalFieldValue,
   parseAdditionalFieldValue,
@@ -84,7 +85,7 @@ export function UserProfile({ className }: UserProfileProps) {
         {localization.settings.userProfile}
       </h2>
 
-      <form onSubmit={handleSubmit}>
+      <FormRoot onSubmit={handleSubmit}>
         <Card className={cn(className)}>
           <CardContent className="flex flex-col gap-6">
             <ChangeAvatar />
@@ -178,7 +179,7 @@ export function UserProfile({ className }: UserProfileProps) {
             </Button>
           </CardFooter>
         </Card>
-      </form>
+      </FormRoot>
     </div>
   );
 }

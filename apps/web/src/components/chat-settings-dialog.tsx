@@ -88,7 +88,7 @@ export function ChatSettingsDialog({ chatId }: { chatId: string }) {
       </Button>
       <Sheet onOpenChange={settings.setOpen} open={settings.open}>
         <SheetContent
-          className="w-full gap-0 overflow-hidden p-0 sm:max-w-xl"
+          className="w-full gap-0 overflow-hidden p-0 sm:w-[min(42rem,calc(100vw-2rem))] sm:!max-w-[min(42rem,calc(100vw-2rem))]"
           side="right"
         >
           <SheetHeader className="shrink-0 border-b px-5 py-5 pr-14 sm:px-6">
@@ -119,7 +119,7 @@ export function ChatSettingsDialog({ chatId }: { chatId: string }) {
                 variant="line"
               >
                 <TabsTrigger
-                  className="min-w-0 px-1 text-xs sm:px-2 sm:text-sm"
+                  className="min-h-11 min-w-0 flex-1 px-1 text-xs sm:px-2 sm:text-sm"
                   value="conversation"
                 >
                   <HugeiconsIcon
@@ -130,7 +130,7 @@ export function ChatSettingsDialog({ chatId }: { chatId: string }) {
                   Conversation
                 </TabsTrigger>
                 <TabsTrigger
-                  className="min-w-0 px-1 text-xs sm:px-2 sm:text-sm"
+                  className="min-h-11 min-w-0 flex-1 px-1 text-xs sm:px-2 sm:text-sm"
                   value="access"
                 >
                   <HugeiconsIcon
@@ -141,7 +141,7 @@ export function ChatSettingsDialog({ chatId }: { chatId: string }) {
                   Access
                 </TabsTrigger>
                 <TabsTrigger
-                  className="min-w-0 px-1 text-xs sm:px-2 sm:text-sm"
+                  className="min-h-11 min-w-0 flex-1 px-1 text-xs sm:px-2 sm:text-sm"
                   value="capabilities"
                 >
                   <HugeiconsIcon

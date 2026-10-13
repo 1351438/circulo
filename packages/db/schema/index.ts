@@ -8,6 +8,7 @@ export * from "./ai-provider";
 
 export * from "./chat";
 export * from "./knowledge";
+export * from "./newsletter";
 export * from "./skills";
 export * from "./workspace-roles";
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FileInput } from "@/components/uploads/file-input";
@@ -318,7 +319,7 @@ export function Account(_props: AccountProps) {
                 Name
               </Label>
               {isEditingName ? (
-                <input
+                <Input
                   ref={inputRef}
                   value={name}
                   onChange={(e) => setName(e.target.value)}

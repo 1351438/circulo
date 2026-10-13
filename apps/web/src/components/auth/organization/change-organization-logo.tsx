@@ -18,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { organizationPlugin } from "@/lib/auth/organization-plugin";
@@ -116,7 +117,7 @@ export function ChangeOrganizationLogo({
         {organizationLocalization.logo}
       </Label>
 
-      <input
+      <Input
         ref={fileInputRef}
         type="file"
         accept="image/*"

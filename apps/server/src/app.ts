@@ -36,6 +36,7 @@ import knowledge from "@/routes/knowledge";
 import memories from "@/routes/memories";
 import messages from "@/routes/messages";
 import models from "@/routes/models";
+import newsletter from "@/routes/newsletter";
 import skills from "@/routes/skills";
 import suggestions from "@/routes/suggestions";
 import sync from "@/routes/sync";
@@ -141,6 +142,7 @@ const routes = [
   instance,
   knowledge,
   memories,
+  newsletter,
   suggestions,
   skills,
   sync,

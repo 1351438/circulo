@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import { getViewURL } from "@better-auth-ui/core";
 import {
   useAuth,
@@ -95,7 +96,7 @@ export function ForgotPassword({ className }: ForgotPasswordProps) {
       </CardHeader>
 
       <CardContent>
-        <form onSubmit={handleSubmit}>
+        <FormRoot onSubmit={handleSubmit}>
           <FieldGroup>
             <Field data-invalid={!!fieldErrors.email}>
               <FieldLabel htmlFor="email">{localization.auth.email}</FieldLabel>
@@ -142,7 +143,7 @@ export function ForgotPassword({ className }: ForgotPasswordProps) {
               </Button>
             </div>
           </FieldGroup>
-        </form>
+        </FormRoot>
 
         <div className="mt-4 flex w-full flex-col items-center gap-3">
           <FieldDescription className="text-center">

@@ -2,6 +2,7 @@ import { colorPattern, tailwindColorMap } from "@/consts/hero-section";
 import { cn } from "@/lib/utils";
 import { ArrowRight, ArrowUpRight, Phone } from "lucide-react";
 import { EnhancedLink } from "./enhanced-link";
+import { HeroConversationVisual } from "./hero-conversation-visual";
 import { Logo } from "./logo";
 import { Button } from "./ui/button";
 
@@ -75,7 +76,7 @@ export function HeroSection() {
         </div>
 
         {/* content start */}
-        <main className="relative flex flex-col items-center justify-evenly px-8 max-md:col-span-2">
+        <main className="relative flex flex-col items-center justify-evenly px-8 max-md:col-span-2 md:items-start md:px-12">
           <EnhancedLink
             href="https://www.youtube.com/"
             target="_blank"
@@ -90,7 +91,7 @@ export function HeroSection() {
             <ArrowRight className="size-3" />
           </EnhancedLink>
 
-          <div className="flex flex-col items-center justify-center gap-4 text-center text-balance">
+          <div className="flex max-w-xl flex-col items-center justify-center gap-4 text-center text-balance md:items-start md:text-left">
             <h1 className="text-4xl font-semibold sm:text-5xl lg:text-6xl">
               Many minds, one evolving dialogue
             </h1>
@@ -100,7 +101,7 @@ export function HeroSection() {
             </h2>
           </div>
 
-          <div className="flex items-center gap-2 max-sm:flex-col">
+          <div className="flex items-center gap-2 max-sm:flex-col md:items-start">
             <Button
               asChild
               variant="highlightedText"
@@ -124,6 +125,9 @@ export function HeroSection() {
             </EnhancedLink>
           </div>
         </main>
+        <div className="relative col-start-2 row-start-1 flex items-center justify-center px-8 py-12 max-md:hidden">
+          <HeroConversationVisual />
+        </div>
       </div>
     </section>
   );

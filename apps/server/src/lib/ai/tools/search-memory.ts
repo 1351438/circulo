@@ -1,6 +1,7 @@
-import { db, memory } from "@/db";
+import { memory } from "@/db";
+import { retrieveMemories } from "@/lib/memory/retrieval";
 import type { Tool } from "ai";
-import { and, desc, eq, ilike, or } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { z } from "zod";
 
 export function searchMemory(params: {
@@ -44,16 +45,11 @@ export function searchMemory(params: {
           : []),
       ];
       if (!scopes.length) return { results: [] };
-      const results = await db.query.memory.findMany({
-        where: and(
-          eq(memory.organizationId, params.organizationId),
-          or(...scopes),
-          or(
-            ilike(memory.key, `%${query}%`),
-            ilike(memory.content, `%${query}%`),
-          ),
-        ),
-        orderBy: [desc(memory.importance), desc(memory.updatedAt)],
+      const results = await retrieveMemories({
+        organizationId: params.organizationId,
+        userId: params.userId,
+        scopes,
+        query,
         limit,
       });
       return {

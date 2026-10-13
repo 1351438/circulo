@@ -1,0 +1,1 @@
+CREATE INDEX "memories_search_idx" ON "memories" USING gin (to_tsvector('simple', "key" || ' ' || "content"));

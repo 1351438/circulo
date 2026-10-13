@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import { authMutationKeys } from "@better-auth-ui/core";
 import type { EmailOtpAuthClient } from "@better-auth-ui/core/plugins/email-otp";
 import { useAuth, useAuthPlugin } from "@better-auth-ui/react";
@@ -151,7 +152,7 @@ export function EmailOtp({
             </>
           )}
 
-          <form onSubmit={handleSubmit}>
+          <FormRoot onSubmit={handleSubmit}>
             <FieldGroup>
               {codeSent ? (
                 <OtpField
@@ -256,7 +257,7 @@ export function EmailOtp({
                 )}
               </div>
             </FieldGroup>
-          </form>
+          </FormRoot>
 
           {socialPosition === "bottom" && !codeSent && (
             <>

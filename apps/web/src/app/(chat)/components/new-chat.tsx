@@ -31,6 +31,7 @@ import { AnimatedItem, AnimatedList } from "@/components/ui/animated-list";
 import { Button } from "@/components/ui/button";
 import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { FieldGroup } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   InputGroupAddon,
   InputGroupButton,
@@ -194,17 +195,20 @@ export function NewChat({ id }: NewChatProps) {
     };
   }, [uploadManager.uploadTasks]);
 
-  const voiceRecorder = useVoiceRecorder({
-    onRecordingComplete: (file, transcript) => {
+  const handleVoiceFile = useCallback(
+    (file: File, transcript?: string) => {
       if (transcript?.trim()) {
         setInputText(
           (current) =>
             `${current}${current.trim() ? " " : ""}${transcript.trim()}`,
         );
-        return;
       }
       uploadManager.enqueueUploads([file], "chat");
     },
+    [setInputText, uploadManager.enqueueUploads],
+  );
+  const voiceRecorder = useVoiceRecorder({
+    onRecordingComplete: handleVoiceFile,
     onRecordingError: (error) => toast.error(error.message),
   });
 
@@ -343,6 +347,7 @@ export function NewChat({ id }: NewChatProps) {
           filename: attachment.name,
           mediaType: attachment.contentType,
           downloadUrl: attachment.downloadUrl,
+          lastModified: attachment.lastModified,
         })),
         ...(text ? [{ type: "text" as const, text }] : []),
       ],
@@ -393,7 +398,7 @@ export function NewChat({ id }: NewChatProps) {
         <Bot />
       </InputGroupButton>
       {selectedAgentCount > 0 && (
-        <span className="pointer-events-none absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-teal-600 px-[3px] text-[10px] leading-none font-semibold text-white">
+        <span className="pointer-events-none absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-[3px] text-[10px] leading-none font-semibold text-primary-foreground">
           {selectedAgentCount}
         </span>
       )}
@@ -420,9 +425,9 @@ export function NewChat({ id }: NewChatProps) {
             </Button>
           )}
           <h1 className="text-3xl">One chat to rule them all</h1>
-          <input
+          <Input
             ref={fileInputRef}
-            className="hidden"
+            className="sr-only"
             multiple
             onChange={(event) => {
               const files = Array.from(event.target.files ?? []);
@@ -431,53 +436,6 @@ export function NewChat({ id }: NewChatProps) {
             }}
             type="file"
           />
-          {(attachments.length > 0 || uploadManager.uploadTasks.length > 0) && (
-            <div className="flex w-full flex-wrap gap-2">
-              {attachments.map((attachment) => (
-                <PreviewAttachment
-                  attachment={attachment}
-                  key={attachment.url}
-                  onRemove={() => {
-                    const task = uploadManager.uploadTasks.find(
-                      (item) => item.url === attachment.url,
-                    );
-                    if (task) uploadManager.removeUploadTask(task.id);
-                    setAttachments((current) =>
-                      current.filter((item) => item.url !== attachment.url),
-                    );
-                  }}
-                />
-              ))}
-              {uploadManager.uploadTasks
-                .filter((item) =>
-                  ["queued", "preparing", "uploading", "error"].includes(
-                    item.status,
-                  ),
-                )
-                .map((item) => (
-                  <PreviewAttachment
-                    attachment={{
-                      url: "",
-                      name: item.file.name,
-                      contentType: item.file.type,
-                    }}
-                    error={item.error}
-                    isUploading={
-                      item.status === "queued" ||
-                      item.status === "preparing" ||
-                      item.status === "uploading"
-                    }
-                    key={item.id}
-                    onRemove={() => uploadManager.removeUploadTask(item.id)}
-                    onRetry={
-                      item.status === "error"
-                        ? () => uploadManager.retryUploadTask(item.id)
-                        : undefined
-                    }
-                  />
-                ))}
-            </div>
-          )}
           {voiceRecorder.isRecording ? (
             <VoiceRecordingIndicator
               elapsedSeconds={voiceRecorder.elapsedSeconds}
@@ -487,119 +445,184 @@ export function NewChat({ id }: NewChatProps) {
               transcript={voiceRecorder.transcript}
             />
           ) : (
-            <CustomInputGroup className="h-14 w-full rounded-full! bg-sidebar!">
-              {/* TODO multiline + combine with CHAT SDK's main input */}
-              <CustomInputGroupInput
-                placeholder=" Your first message (optional)"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit();
-                  }
-                }}
-              />
-              <InputGroupAddon align="inline-start" className="ml-0!">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <InputGroupButton
-                      aria-label="Add files"
-                      size="icon-md"
-                      variant="ghost-sidebar"
-                      className="rounded-full"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Paperclip />
-                    </InputGroupButton>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Add files</p>
-                  </TooltipContent>
-                </Tooltip>
-              </InputGroupAddon>
-
-              <InputGroupAddon align="inline-end" className="mr-0!">
-                {isMobile ? (
-                  <Sheet>
-                    <SheetTrigger asChild>{agentSelectionButton}</SheetTrigger>
-                    <SheetContent
-                      side="right"
-                      className="w-80 border-teal-50/15 bg-sidebar p-0"
-                    >
-                      <SheetHeader className="sr-only">
-                        <SheetTitle>Select AI Agents</SheetTitle>
-                        <SheetDescription>
-                          Choose who will help with your request
-                        </SheetDescription>
-                      </SheetHeader>
-                      {agentPanel}
-                    </SheetContent>
-                  </Sheet>
-                ) : (
-                  agentSelectionButton
-                )}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <InputGroupButton
-                      aria-label="Dictate"
-                      size="icon-md"
-                      variant="ghost-sidebar"
-                      className={cn(
-                        "rounded-full",
-                        voiceRecorder.isRecording && "text-red-500",
-                      )}
-                      onClick={() => {
-                        if (voiceRecorder.isRecording) {
-                          voiceRecorder.stop();
-                        } else {
-                          void voiceRecorder.start().catch(() => undefined);
-                        }
-                      }}
-                    >
-                      {voiceRecorder.isRecording ? <Square /> : <Mic />}
-                    </InputGroupButton>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      {voiceRecorder.isRecording
-                        ? "Stop recording"
-                        : "Record voice"}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-                <InputGroupButton
-                  aria-label={
-                    status === "submitted" || status === "streaming"
-                      ? "Sending message"
-                      : "Send message"
-                  }
-                  size="icon-md"
-                  variant="primary"
-                  className="rounded-full"
-                  onClick={handleSubmit}
-                  disabled={
-                    submittingRef.current ||
-                    status === "submitted" ||
-                    status === "streaming" ||
-                    voiceRecorder.isStarting ||
-                    isReadingAttachments ||
-                    voiceRecorder.isRecording ||
-                    uploadManager.hasUploadErrors ||
-                    uploadManager.uploadTasks.some((task) =>
-                      ["queued", "preparing", "uploading"].includes(
-                        task.status,
-                      ),
-                    )
-                  }
+            <CustomInputGroup className="h-auto min-h-14 w-full rounded-3xl! bg-sidebar!">
+              {(attachments.length > 0 ||
+                uploadManager.uploadTasks.length > 0) && (
+                <InputGroupAddon
+                  align="block-start"
+                  className="min-w-0 justify-start overflow-x-auto overscroll-contain py-3"
+                  data-testid="attachments-preview"
                 >
-                  {status === "submitted" || status === "streaming" ? (
-                    <LoaderCircle aria-hidden="true" className="animate-spin" />
+                  <div className="flex min-w-0 flex-nowrap gap-2">
+                    {attachments.map((attachment) => (
+                      <PreviewAttachment
+                        attachment={attachment}
+                        key={attachment.url}
+                        onRemove={() => {
+                          const task = uploadManager.uploadTasks.find(
+                            (item) => item.url === attachment.url,
+                          );
+                          if (task) uploadManager.removeUploadTask(task.id);
+                          setAttachments((current) =>
+                            current.filter(
+                              (item) => item.url !== attachment.url,
+                            ),
+                          );
+                        }}
+                      />
+                    ))}
+                    {uploadManager.uploadTasks
+                      .filter((item) =>
+                        ["queued", "preparing", "uploading", "error"].includes(
+                          item.status,
+                        ),
+                      )
+                      .map((item) => (
+                        <PreviewAttachment
+                          attachment={{
+                            url: "",
+                            name: item.file.name,
+                            contentType: item.file.type,
+                          }}
+                          error={item.error}
+                          isUploading={
+                            item.status === "queued" ||
+                            item.status === "preparing" ||
+                            item.status === "uploading"
+                          }
+                          key={item.id}
+                          onRemove={() =>
+                            uploadManager.removeUploadTask(item.id)
+                          }
+                          onRetry={
+                            item.status === "error"
+                              ? () => uploadManager.retryUploadTask(item.id)
+                              : undefined
+                          }
+                        />
+                      ))}
+                  </div>
+                </InputGroupAddon>
+              )}
+              <div className="flex w-full min-w-0 items-center">
+                {/* TODO multiline + combine with CHAT SDK's main input */}
+                <CustomInputGroupInput
+                  placeholder=" Your first message (optional)"
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmit();
+                    }
+                  }}
+                />
+                <InputGroupAddon align="inline-start" className="ml-0!">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <InputGroupButton
+                        aria-label="Add files"
+                        size="icon-md"
+                        variant="ghost-sidebar"
+                        className="rounded-full"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Paperclip />
+                      </InputGroupButton>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Add files</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </InputGroupAddon>
+
+                <InputGroupAddon align="inline-end" className="mr-0!">
+                  {isMobile ? (
+                    <Sheet>
+                      <SheetTrigger asChild>
+                        {agentSelectionButton}
+                      </SheetTrigger>
+                      <SheetContent
+                        side="right"
+                        className="w-80 border-sidebar-border bg-sidebar p-0"
+                      >
+                        <SheetHeader className="sr-only">
+                          <SheetTitle>Select AI Agents</SheetTitle>
+                          <SheetDescription>
+                            Choose who will help with your request
+                          </SheetDescription>
+                        </SheetHeader>
+                        {agentPanel}
+                      </SheetContent>
+                    </Sheet>
                   ) : (
-                    <ArrowUp />
+                    agentSelectionButton
                   )}
-                </InputGroupButton>
-              </InputGroupAddon>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <InputGroupButton
+                        aria-label="Dictate"
+                        size="icon-md"
+                        variant="ghost-sidebar"
+                        className={cn(
+                          "rounded-full",
+                          voiceRecorder.isRecording && "text-red-500",
+                        )}
+                        onClick={() => {
+                          if (voiceRecorder.isRecording) {
+                            voiceRecorder.stop();
+                          } else {
+                            void voiceRecorder.start().catch(() => undefined);
+                          }
+                        }}
+                      >
+                        {voiceRecorder.isRecording ? <Square /> : <Mic />}
+                      </InputGroupButton>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {voiceRecorder.isRecording
+                          ? "Stop recording"
+                          : "Record voice"}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <InputGroupButton
+                    aria-label={
+                      status === "submitted" || status === "streaming"
+                        ? "Sending message"
+                        : "Send message"
+                    }
+                    size="icon-md"
+                    variant="primary"
+                    className="rounded-full"
+                    onClick={handleSubmit}
+                    disabled={
+                      submittingRef.current ||
+                      status === "submitted" ||
+                      status === "streaming" ||
+                      voiceRecorder.isStarting ||
+                      isReadingAttachments ||
+                      voiceRecorder.isRecording ||
+                      uploadManager.hasUploadErrors ||
+                      uploadManager.uploadTasks.some((task) =>
+                        ["queued", "preparing", "uploading"].includes(
+                          task.status,
+                        ),
+                      )
+                    }
+                  >
+                    {status === "submitted" || status === "streaming" ? (
+                      <LoaderCircle
+                        aria-hidden="true"
+                        className="animate-spin"
+                      />
+                    ) : (
+                      <ArrowUp />
+                    )}
+                  </InputGroupButton>
+                </InputGroupAddon>
+              </div>
             </CustomInputGroup>
           )}
         </article>
@@ -639,10 +662,10 @@ function SelectAgents() {
 
   return (
     <RouteViewLayout className="flex flex-col">
-      <div className="flex items-center justify-between gap-2 border-b border-teal-50/15 p-4">
+      <div className="flex items-center justify-between gap-2 border-b border-sidebar-border p-4">
         <div className="flex flex-col gap-1">
           <h2 className="text-sm font-medium">Select AI Agents</h2>
-          <p className="text-xs text-foreground/75">
+          <p className="text-xs text-muted-foreground">
             Choose who will help with your request
           </p>
         </div>
@@ -760,9 +783,9 @@ const SelectableAgent = forwardRef<HTMLButtonElement, SelectableAgentProps>(
                   ref={agentRef}
                   onClick={handleSelect}
                   data-active={isSelected}
-                  className="group/agent relative flex h-14 w-full items-center gap-3 bg-sidebar px-3 py-2 transition-colors active:bg-teal-50/5! data-[active=true]:bg-teal-50/5"
+                  className="group/agent relative flex h-14 w-full items-center gap-3 bg-sidebar px-3 py-2 text-sidebar-foreground transition-colors hover:bg-sidebar-accent active:bg-sidebar-accent data-[active=true]:bg-sidebar-accent"
                 >
-                  <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-teal-50/15">
+                  <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sidebar-accent text-sidebar-accent-foreground">
                     {agent.avatarUrl && (
                       <EnhancedImage
                         src={agent.avatarUrl}
@@ -777,8 +800,8 @@ const SelectableAgent = forwardRef<HTMLButtonElement, SelectableAgentProps>(
 
                   <span
                     className={cn(
-                      "absolute start-11 top-10 flex size-5 scale-0 items-center justify-center rounded-full border-3 border-sidebar bg-green-600 opacity-0 transition-all",
-                      isSelected && "scale-100 border-[#303131] opacity-100",
+                      "absolute start-11 top-10 flex size-5 scale-0 items-center justify-center rounded-full border-3 border-sidebar bg-primary text-primary-foreground opacity-0 transition-all",
+                      isSelected && "scale-100 opacity-100",
                     )}
                   >
                     <Check className="size-3" />
@@ -788,12 +811,12 @@ const SelectableAgent = forwardRef<HTMLButtonElement, SelectableAgentProps>(
                     <span className="truncate text-sm font-medium">
                       {agent.name}
                     </span>
-                    <span className="truncate text-xs text-foreground/75">
+                    <span className="truncate text-xs text-muted-foreground">
                       {agent.description || "Isn't described"}
                     </span>
                   </span>
                   <span className="flex max-w-28 shrink-0 flex-col items-end gap-1">
-                    <span className="max-w-full truncate rounded-full bg-teal-50/15 px-1 text-[0.625rem] text-foreground/75">
+                    <span className="max-w-full truncate rounded-full bg-sidebar-accent px-1 text-[0.625rem] text-sidebar-accent-foreground">
                       {agent.model}
                     </span>
                   </span>
@@ -835,7 +858,7 @@ const SelectableAgent = forwardRef<HTMLButtonElement, SelectableAgentProps>(
                 <h3 className="text-start font-medium">
                   Upgrade to Select More Agents
                 </h3>
-                <p className="text-start text-background/75">
+                <p className="text-start text-primary-foreground">
                   Go to the plans page to upgrade
                 </p>
               </div>
@@ -843,7 +866,7 @@ const SelectableAgent = forwardRef<HTMLButtonElement, SelectableAgentProps>(
           </Tooltip>
         </ContextMenu>
 
-        <div className="h-0 border-b border-teal-50/15 last:hidden" />
+        <div className="h-0 border-b border-sidebar-border last:hidden" />
       </>
     );
   },
@@ -1271,22 +1294,22 @@ function RemoveAgent() {
         </Alert>
         <Table>
           <TableBody>
-            <TableRow className="border-teal-50/15">
-              <TableCell className="ps-4 text-teal-50/75">Name</TableCell>
+            <TableRow className="border-sidebar-border">
+              <TableCell className="ps-4 text-muted-foreground">Name</TableCell>
               <TableCell className="pe-4 font-medium">
                 {currentAgent?.name}
               </TableCell>
             </TableRow>
-            <TableRow className="border-teal-50/15">
-              <TableCell className="ps-4 text-teal-50/75">
+            <TableRow className="border-sidebar-border">
+              <TableCell className="ps-4 text-muted-foreground">
                 Description
               </TableCell>
               <TableCell className="pe-4 font-medium">
                 {currentAgent?.description || "Isn't described"}
               </TableCell>
             </TableRow>
-            <TableRow className="border-teal-50/15">
-              <TableCell className="ps-4 text-teal-50/75">
+            <TableRow className="border-sidebar-border">
+              <TableCell className="ps-4 text-muted-foreground">
                 Instructions
               </TableCell>
               <TableCell className="pe-4 font-medium">

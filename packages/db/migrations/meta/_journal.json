@@ -288,6 +288,27 @@
       "when": 1789849762342,
       "tag": "0041_pink_chamber",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1791826475481,
+      "tag": "0042_amusing_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1791826741432,
+      "tag": "0043_amusing_pet_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1791829974712,
+      "tag": "0044_bent_chamber",
+      "breakpoints": true
     }
   ]
 }

@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { FormRoot } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -138,7 +139,7 @@ export function InviteMemberDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <FormRoot onSubmit={handleSubmit} className="flex flex-col gap-6">
           <DialogHeader>
             <DialogTitle>
               <UserPlus />
@@ -258,7 +259,7 @@ export function InviteMemberDialog({
               {organizationLocalization.inviteMember}
             </Button>
           </DialogFooter>
-        </form>
+        </FormRoot>
       </DialogContent>
     </Dialog>
   );

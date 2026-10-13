@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import type { EmailOtpAuthClient } from "@better-auth-ui/core/plugins/email-otp";
 import { useAuth, useAuthPlugin, useSession } from "@better-auth-ui/react";
 import {
@@ -168,7 +169,7 @@ export function ChangeEmailOtp({ className }: ChangeEmailOtpProps) {
         {localization.settings.changeEmail}
       </h2>
 
-      <form onSubmit={handleSubmit}>
+      <FormRoot onSubmit={handleSubmit}>
         <Card className={cn(className)}>
           <CardContent className="flex flex-col gap-6">
             {state.step === "email" ? (
@@ -270,7 +271,7 @@ export function ChangeEmailOtp({ className }: ChangeEmailOtpProps) {
             </Button>
           </CardFooter>
         </Card>
-      </form>
+      </FormRoot>
     </div>
   );
 }

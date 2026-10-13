@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import type { TwoFactorAuthClient } from "@better-auth-ui/core/plugins/two-factor";
 import { useAuth, useAuthPlugin } from "@better-auth-ui/react";
 import { useGenerateBackupCodes } from "@better-auth-ui/react/plugins/two-factor";
@@ -91,7 +92,7 @@ export function RegenerateBackupCodesDialog({
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <FormRoot onSubmit={handleSubmit} className="flex flex-col gap-6">
           <AlertDialogHeader>
             <AlertDialogMedia>
               <KeyRound />
@@ -148,7 +149,7 @@ export function RegenerateBackupCodesDialog({
                 : twoFactorLocalization.regenerateBackupCodes}
             </Button>
           </AlertDialogFooter>
-        </form>
+        </FormRoot>
       </AlertDialogContent>
     </AlertDialog>
   );

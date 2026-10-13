@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { FormRoot } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { passkeyPlugin } from "@/lib/auth/passkey-plugin";
@@ -48,7 +49,7 @@ export function AddPasskeyDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <FormRoot onSubmit={handleSubmit} className="flex flex-col gap-6">
           <DialogHeader>
             <DialogTitle>
               <Fingerprint />
@@ -91,7 +92,7 @@ export function AddPasskeyDialog({
               {passkeyLocalization.addPasskey}
             </Button>
           </DialogFooter>
-        </form>
+        </FormRoot>
       </DialogContent>
     </Dialog>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import { authMutationKeys } from "@better-auth-ui/core";
 import {
   AuthPrompts,
@@ -70,12 +71,18 @@ export function SignIn({
   const continueSignIn = useSignInContinuation();
 
   const [password, setPassword] = useState("");
+  const [submitError, setSubmitError] = useState<string>();
 
   const { mutate: signInEmail, isPending: signInEmailPending } = useSignInEmail(
     authClient,
     {
       onError: (error, { email }) => {
         setPassword("");
+        setSubmitError(
+          error.error?.message ||
+            error.message ||
+            "Sign-in failed. Check your connection and try again.",
+        );
 
         if (error.error?.code === "EMAIL_NOT_VERIFIED") {
           sessionStorage.setItem("better-auth-ui.verify-email", email);
@@ -111,6 +118,7 @@ export function SignIn({
 
   const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setSubmitError(undefined);
 
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
@@ -153,7 +161,7 @@ export function SignIn({
           )}
 
           {emailAndPassword?.enabled && (
-            <form onSubmit={handleSubmit}>
+            <FormRoot onSubmit={handleSubmit}>
               <FieldGroup>
                 <Field data-invalid={!!fieldErrors.email}>
                   <FieldLabel htmlFor="email">
@@ -291,6 +299,11 @@ export function SignIn({
                 )}
 
                 <div className="flex flex-col gap-3">
+                  {submitError && (
+                    <p role="alert" className="text-sm text-destructive">
+                      {submitError}
+                    </p>
+                  )}
                   <Button
                     type="submit"
                     className="relative overflow-visible"
@@ -313,7 +326,7 @@ export function SignIn({
                   )}
                 </div>
               </FieldGroup>
-            </form>
+            </FormRoot>
           )}
 
           {socialPosition === "bottom" && (

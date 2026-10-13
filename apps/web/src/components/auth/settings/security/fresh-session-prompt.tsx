@@ -8,6 +8,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import { FormRoot } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useSignInContinuation } from "@/lib/auth/use-sign-in-continuation";
@@ -55,7 +56,7 @@ export function FreshSessionPrompt({ onFresh }: FreshSessionPromptProps) {
           </FieldDescription>
         </div>
         {auth.emailAndPassword?.enabled ? (
-          <form className="flex flex-col gap-3" onSubmit={submit}>
+          <FormRoot className="flex flex-col gap-3" onSubmit={submit}>
             <Field data-invalid={signIn.isError}>
               <FieldLabel htmlFor="fresh-session-password">
                 {auth.localization.auth.password}
@@ -79,7 +80,7 @@ export function FreshSessionPrompt({ onFresh }: FreshSessionPromptProps) {
               {signIn.isPending && <Spinner />}
               {auth.localization.settings.freshSessionSubmit}
             </Button>
-          </form>
+          </FormRoot>
         ) : (
           <Button
             onClick={() =>

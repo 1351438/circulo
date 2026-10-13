@@ -179,13 +179,13 @@ export function WorkflowProcess({
 
   return (
     <Collapsible
-      className="not-prose w-full overflow-hidden rounded-xl border bg-muted/20 text-sm"
+      className="not-prose w-full overflow-hidden rounded-xl border bg-card text-sm text-card-foreground"
       onOpenChange={setProcessOpen}
       open={processOpen}
     >
       <CollapsibleTrigger asChild nativeButton>
         <button
-          className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
+          className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
           type="button"
         >
           <span className="flex min-w-0 items-center gap-2">
@@ -228,7 +228,7 @@ export function WorkflowProcess({
           )}
 
           {process.activity.length > 0 && (
-            <div className="mt-1 rounded-lg border bg-background/40 p-2">
+            <div className="mt-1 rounded-lg border bg-background p-2">
               <div className="mb-1 px-1 text-xs font-medium text-muted-foreground">
                 Activity
               </div>
@@ -325,7 +325,7 @@ function ApprovalProcessRow({
 }) {
   const pending = approval.status === "pending";
   return (
-    <div className="flex flex-col gap-2 rounded-lg border bg-background/60 px-2.5 py-2">
+    <div className="flex flex-col gap-2 rounded-lg border bg-background px-2.5 py-2">
       <div className="flex items-start gap-2">
         <span className="mt-0.5">
           {pending ? (
@@ -386,7 +386,7 @@ function HandoffProcessRow({
   const pending = handoff.status === "pending";
   const accepted = handoff.status === "accepted";
   return (
-    <div className="flex flex-col gap-2 rounded-lg border bg-background/60 px-2.5 py-2">
+    <div className="flex flex-col gap-2 rounded-lg border bg-background px-2.5 py-2">
       <div className="flex items-start gap-2">
         <span className="mt-0.5">
           {pending ? (
@@ -464,7 +464,7 @@ function AgentProcessRow({
 
   return (
     <Collapsible
-      className="group/agent rounded-lg border bg-background/60"
+      className="group/agent rounded-lg border bg-background"
       onOpenChange={setOpen}
       open={open}
     >

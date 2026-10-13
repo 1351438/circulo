@@ -2,8 +2,17 @@
 
 import type { ArtifactKind } from "@/components/artifacts/artifact";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Empty,
+  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -24,7 +33,7 @@ import { getFetcher } from "@/lib/swr";
 import { getSafeNavigationUrl } from "@/lib/urls/safe";
 import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { formatDistanceToNow } from "date-fns";
+import { format, isValid } from "date-fns";
 import {
   AlertCircle,
   ArrowUpRight,
@@ -56,10 +65,12 @@ type ChatResource = {
   };
   messageId: string | null;
   createdAt: string;
-  updatedAt: string;
+  modifiedAt: string | null;
 };
 
 type ResourceFilter = "all" | "artifact" | "file" | "audio";
+
+const EMPTY_RESOURCES: ChatResource[] = [];
 
 const typeLabels: Record<ResourceType, string> = {
   artifact: "Artifact",
@@ -93,17 +104,22 @@ function initials(name: string) {
     .join("");
 }
 
+function formatResourceDate(value: string | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  return isValid(date) ? format(date, "MMM d, yyyy 'at' h:mm a") : null;
+}
+
 export function ChatResourceLibrary({ chatId }: { chatId: string }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ResourceFilter>("all");
   const { setArtifact } = useArtifact();
-  const { data, error, isLoading } = useSWR<{ resources: ChatResource[] }>(
-    open ? `/api/chat/${chatId}/resources` : null,
-    getFetcher(),
-  );
+  const { data, error, isLoading, mutate } = useSWR<{
+    resources: ChatResource[];
+  }>(open ? `/api/chat/${chatId}/resources` : null, getFetcher());
 
-  const resources = data?.resources ?? [];
+  const resources = data?.resources ?? EMPTY_RESOURCES;
   const normalizedSearch = search.trim().toLowerCase();
   const filteredResources = useMemo(
     () =>
@@ -171,13 +187,16 @@ export function ChatResourceLibrary({ chatId }: { chatId: string }) {
       </Button>
 
       <Sheet onOpenChange={setOpen} open={open}>
-        <SheetContent className="w-full gap-0 p-0 sm:max-w-xl" side="right">
+        <SheetContent
+          className="w-full gap-0 p-0 sm:w-[min(42rem,calc(100vw-2rem))] sm:!max-w-[min(42rem,calc(100vw-2rem))]"
+          side="right"
+        >
           <SheetHeader className="border-b px-5 py-5 pr-14 sm:px-6">
             <SheetTitle className="flex items-center gap-2 text-lg">
               Chat library
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">
+              <Badge className="font-normal" variant="secondary">
                 {resources.length}
-              </span>
+              </Badge>
             </SheetTitle>
             <SheetDescription>
               Documents, artifacts, voice notes, and files shared in this chat.
@@ -218,13 +237,19 @@ export function ChatResourceLibrary({ chatId }: { chatId: string }) {
                 <div className="flex flex-col gap-3">
                   {[1, 2, 3, 4].map((item) => (
                     <div
-                      className="flex items-center gap-3 rounded-2xl border p-3"
+                      className="flex flex-col gap-3 rounded-2xl border p-4"
                       key={item}
                     >
-                      <Skeleton className="size-10 rounded-xl" />
-                      <div className="flex min-w-0 flex-1 flex-col gap-2">
-                        <Skeleton className="h-3 w-2/3 rounded" />
-                        <Skeleton className="h-2.5 w-1/2 rounded" />
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="size-11 rounded-xl" />
+                        <div className="flex min-w-0 flex-1 flex-col gap-2">
+                          <Skeleton className="h-4 w-2/3 rounded" />
+                          <Skeleton className="h-3 w-1/2 rounded" />
+                        </div>
+                      </div>
+                      <div className="flex gap-3 border-t pt-3">
+                        <Skeleton className="h-7 w-28 rounded-full" />
+                        <Skeleton className="h-7 w-32 rounded-full" />
                       </div>
                     </div>
                   ))}
@@ -240,6 +265,11 @@ export function ChatResourceLibrary({ chatId }: { chatId: string }) {
                       We couldn&apos;t load the shared resources for this chat.
                     </EmptyDescription>
                   </EmptyHeader>
+                  <EmptyContent>
+                    <Button onClick={() => void mutate()} variant="outline">
+                      Try again
+                    </Button>
+                  </EmptyContent>
                 </Empty>
               ) : groupedResources.length === 0 ? (
                 <Empty>
@@ -296,49 +326,99 @@ function ResourceRow({
 }) {
   const safeUrl = getSafeNavigationUrl(resource.url);
   const Icon = resourceIcon(resource.type);
-  const meta = [
-    resource.sender.name,
-    formatDistanceToNow(new Date(resource.updatedAt), { addSuffix: true }),
-    formatSize(resource.size),
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const createdAt = formatResourceDate(resource.createdAt);
+  const modifiedAt = formatResourceDate(resource.modifiedAt);
+  const senderRole =
+    resource.sender.type === "agent"
+      ? "Agent"
+      : resource.sender.type === "system"
+        ? "System"
+        : "Member";
   const content = (
-    <>
-      <Avatar size="sm">
-        {resource.sender.image && (
-          <AvatarImage alt="" src={resource.sender.image} />
-        )}
-        <AvatarFallback>{initials(resource.sender.name)}</AvatarFallback>
-      </Avatar>
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-        <Icon className="size-4" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium">{resource.name}</div>
-        <div className="truncate text-xs text-muted-foreground">{meta}</div>
-        <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <span className="rounded-full bg-muted px-1.5 py-0.5">
-            {resource.type === "artifact" && resource.artifactKind
-              ? resource.artifactKind
-              : typeLabels[resource.type]}
-          </span>
-          {resource.mediaType && (
-            <span className="truncate">{resource.mediaType}</span>
-          )}
+    <Card className="gap-0 rounded-xl py-0 transition-colors group-hover:border-foreground/20 group-hover:bg-muted/20 group-focus-visible:border-ring group-focus-visible:ring-2 group-focus-visible:ring-ring/50">
+      <CardHeader className="grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-3 p-4">
+        <div className="flex size-11 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+          <Icon aria-hidden="true" className="size-5" />
         </div>
-      </div>
-      {(resource.type === "artifact" || safeUrl) && (
-        <ArrowUpRight className="size-4 shrink-0 text-muted-foreground" />
-      )}
-    </>
+        <div className="min-w-0">
+          <CardTitle className="truncate text-sm" title={resource.name}>
+            {resource.name}
+          </CardTitle>
+          <CardDescription className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+            <span>
+              {resource.type === "artifact" && resource.artifactKind
+                ? resource.artifactKind
+                : typeLabels[resource.type]}
+            </span>
+            {resource.mediaType && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="truncate">{resource.mediaType}</span>
+              </>
+            )}
+            {formatSize(resource.size) && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{formatSize(resource.size)}</span>
+              </>
+            )}
+          </CardDescription>
+        </div>
+        {(resource.type === "artifact" || safeUrl) && (
+          <ArrowUpRight
+            aria-hidden="true"
+            className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
+          />
+        )}
+      </CardHeader>
+      <CardContent className="grid gap-3 border-t px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <div className="flex min-w-0 items-center gap-2">
+          <Avatar size="sm">
+            {resource.sender.image && (
+              <AvatarImage alt="" src={resource.sender.image} />
+            )}
+            <AvatarFallback>{initials(resource.sender.name)}</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <div className="text-[11px] text-muted-foreground">Shared by</div>
+            <div className="truncate text-sm font-medium">
+              {resource.sender.name}
+            </div>
+          </div>
+          <Badge className="ml-auto sm:ml-0" variant="outline">
+            {senderRole}
+          </Badge>
+        </div>
+        <dl className="flex flex-wrap gap-x-4 gap-y-2 text-xs">
+          <div>
+            <dt className="text-muted-foreground">
+              {resource.type === "artifact" ? "Created" : "Shared"}
+            </dt>
+            <dd
+              className="font-medium break-words"
+              title={createdAt ?? undefined}
+            >
+              {createdAt ?? "Date unavailable"}
+            </dd>
+          </div>
+          {modifiedAt && (
+            <div>
+              <dt className="text-muted-foreground">Modified</dt>
+              <dd className="font-medium break-words" title={modifiedAt}>
+                {modifiedAt}
+              </dd>
+            </div>
+          )}
+        </dl>
+      </CardContent>
+    </Card>
   );
 
   if (resource.type === "artifact") {
     return (
       <button
-        aria-label={`Open ${resource.name}`}
-        className="group flex min-w-0 items-center gap-3 rounded-2xl border p-3 text-left transition-colors hover:bg-muted"
+        aria-label={`Open artifact ${resource.name}`}
+        className="group w-full min-w-0 rounded-xl text-left focus-visible:outline-none"
         onClick={() => onOpenArtifact(resource)}
         type="button"
       >
@@ -350,8 +430,8 @@ function ResourceRow({
   if (safeUrl) {
     return (
       <a
-        aria-label={`Open ${resource.name}`}
-        className="group flex min-w-0 items-center gap-3 rounded-2xl border p-3 text-left transition-colors hover:bg-muted"
+        aria-label={`Open ${resource.name} in a new tab`}
+        className="group block min-w-0 rounded-xl text-left focus-visible:outline-none"
         href={safeUrl}
         rel="noreferrer"
         target="_blank"
@@ -361,9 +441,5 @@ function ResourceRow({
     );
   }
 
-  return (
-    <div className="flex min-w-0 items-center gap-3 rounded-2xl border p-3">
-      {content}
-    </div>
-  );
+  return <div className="group min-w-0 rounded-xl">{content}</div>;
 }

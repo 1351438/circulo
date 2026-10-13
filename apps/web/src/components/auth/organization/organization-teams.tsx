@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { FormRoot } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -70,7 +71,7 @@ export function OrganizationTeams() {
             {localization.teamsDescription}
           </p>
         </div>
-        <form className="flex items-end gap-2" onSubmit={handleCreate}>
+        <FormRoot className="flex items-end gap-2" onSubmit={handleCreate}>
           <Field>
             <FieldLabel htmlFor="new-team-name">{localization.name}</FieldLabel>
             <Input id="new-team-name" name="name" required />
@@ -79,7 +80,7 @@ export function OrganizationTeams() {
             {createTeam.isPending && <Spinner />}
             {localization.createTeam}
           </Button>
-        </form>
+        </FormRoot>
       </div>
       {teams.isPending ? (
         <Spinner />

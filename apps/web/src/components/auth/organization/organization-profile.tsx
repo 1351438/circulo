@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import { parseAdditionalFieldValue } from "@better-auth-ui/core";
 import type { OrganizationAuthClient } from "@better-auth-ui/core/plugins/organization";
 import { useAuth, useAuthPlugin } from "@better-auth-ui/react";
@@ -86,7 +87,7 @@ export function OrganizationProfile({ className }: OrganizationProfileProps) {
 
       <Card className={className}>
         <CardContent>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <FormRoot onSubmit={handleSubmit} className="flex flex-col gap-4">
             <ChangeOrganizationLogo />
 
             <Field>
@@ -152,7 +153,7 @@ export function OrganizationProfile({ className }: OrganizationProfileProps) {
 
               {localization.settings.saveChanges}
             </Button>
-          </form>
+          </FormRoot>
         </CardContent>
       </Card>
     </div>

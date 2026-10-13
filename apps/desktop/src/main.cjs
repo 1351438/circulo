@@ -8,6 +8,7 @@ const {
   safeStorage,
   session,
   shell,
+  systemPreferences,
 } = require("electron");
 const crypto = require("node:crypto");
 const fs = require("node:fs");
@@ -34,6 +35,14 @@ function isLocalRuntimeUrl(url) {
       target.origin === new URL(webUrl).origin ||
       target.origin === new URL(apiUrl).origin
     );
+  } catch {
+    return false;
+  }
+}
+
+function isWebRuntimeOrigin(originOrUrl) {
+  try {
+    return new URL(originOrUrl).origin === new URL(webUrl).origin;
   } catch {
     return false;
   }
@@ -445,9 +454,45 @@ ipcMain.handle("circulo:install-update", () => {
 if (hasSingleInstanceLock) {
   app.whenReady().then(async () => {
     try {
+      session.defaultSession.setPermissionCheckHandler(
+        (_webContents, permission, requestingOrigin, details) => {
+          if (!details.isMainFrame || !isWebRuntimeOrigin(requestingOrigin)) {
+            return false;
+          }
+          if (permission === "media") return details.mediaType === "audio";
+          return permission === "notifications";
+        },
+      );
       session.defaultSession.setPermissionRequestHandler(
-        (_webContents, permission, callback) => {
-          callback(["notifications", "media"].includes(permission));
+        (webContents, permission, callback, details) => {
+          const origin =
+            permission === "media"
+              ? details.securityOrigin
+              : details.requestingUrl;
+          const trustedMainFrame =
+            webContents === mainWindow?.webContents &&
+            details.isMainFrame &&
+            isWebRuntimeOrigin(origin);
+
+          if (permission === "media") {
+            const audioOnly =
+              details.mediaTypes?.length === 1 &&
+              details.mediaTypes[0] === "audio";
+            if (!trustedMainFrame || !audioOnly) {
+              callback(false);
+              return;
+            }
+            if (process.platform === "darwin") {
+              void systemPreferences
+                .askForMediaAccess("microphone")
+                .then(callback, () => callback(false));
+              return;
+            }
+            callback(true);
+            return;
+          }
+
+          callback(permission === "notifications" && trustedMainFrame);
         },
       );
       startLocalRuntime();

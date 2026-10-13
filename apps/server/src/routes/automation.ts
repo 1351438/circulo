@@ -990,6 +990,26 @@ router.post(
           "The target agent is not in this organization",
         );
     }
+    if (body.allowedTools.length) {
+      const discoveredTools = await db.query.mcpTool.findMany({
+        where: and(eq(mcpTool.integrationId, id), eq(mcpTool.enabled, true)),
+        columns: { name: true },
+      });
+      const availableNames = new Set(discoveredTools.map((tool) => tool.name));
+      const invalidNames = body.allowedTools.filter(
+        (toolName) => !availableNames.has(toolName),
+      );
+      if (invalidNames.length) {
+        throw new BadRequestError(
+          `Choose enabled tools discovered for this connection: ${invalidNames.join(", ")}`,
+        );
+      }
+      if (new Set(body.allowedTools).size !== body.allowedTools.length) {
+        throw new BadRequestError(
+          "Each allowed tool can only be selected once",
+        );
+      }
+    }
     const [created] = await db
       .insert(mcpIntegrationLink)
       .values({

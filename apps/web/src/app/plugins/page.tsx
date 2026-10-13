@@ -728,7 +728,8 @@ function PluginsPageContent() {
                       {skillForm.scope === "chat"
                         ? (chatHistory?.chats ?? []).map((chat) => (
                             <SelectItem key={chat.id} value={chat.id}>
-                              {chat.title}
+                              {chat.title?.trim() ||
+                                `Untitled chat (${chat.id.slice(0, 6)})`}
                             </SelectItem>
                           ))
                         : (agents ?? []).map((agent) => (

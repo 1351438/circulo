@@ -35,6 +35,7 @@ import { useLocalStorage, useWindowSize } from "usehooks-ts";
 import { PreviewAttachment } from "./preview-attachment";
 import { SuggestedActions } from "./suggested-actions";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import type { VisibilityType } from "./visibility-selector";
 import { VoiceRecordingIndicator } from "./voice-recording-indicator";
 
@@ -254,11 +255,10 @@ function PureMultimodalInput({
           (current) =>
             `${current}${current.trim() ? " " : ""}${transcript.trim()}`,
         );
-        return;
       }
       uploadManager.enqueueUploads([file], "chat");
     },
-    [setInput, uploadManager],
+    [setInput, uploadManager.enqueueUploads],
   );
   const voiceRecorder = useVoiceRecorder({
     onRecordingComplete: handleVoiceFile,
@@ -293,6 +293,7 @@ function PureMultimodalInput({
           filename: attachment.name,
           mediaType: attachment.contentType,
           downloadUrl: attachment.downloadUrl,
+          lastModified: attachment.lastModified,
         })),
         {
           type: "text",
@@ -399,8 +400,8 @@ function PureMultimodalInput({
           />
         )}
 
-      <input
-        className="pointer-events-none fixed -top-4 -left-4 size-0.5 opacity-0"
+      <Input
+        className="sr-only"
         multiple
         onChange={handleFileChange}
         ref={fileInputRef}
@@ -563,7 +564,7 @@ function PureMultimodalInput({
                   aria-label={
                     status === "error" ? "Retry message" : "Send message"
                   }
-                  className="size-8 rounded-full bg-teal-50 text-background transition-colors duration-200 hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
+                  className="size-8 rounded-full bg-primary text-primary-foreground transition-colors duration-200 hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
                   disabled={
                     (input.trim().length === 0 && attachments.length === 0) ||
                     isReadingAttachments ||
@@ -619,6 +620,7 @@ function PureAttachmentsButton({
 }) {
   return (
     <Button
+      aria-label="Add files"
       className="aspect-square h-8 rounded-lg p-1 transition-colors hover:bg-accent"
       data-testid="attachments-button"
       disabled={status === "submitted" || status === "streaming"}

@@ -15,6 +15,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import { FormRoot } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
@@ -93,7 +94,11 @@ export function EditApiKeyDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
-        <form className="flex flex-col gap-6" onSubmit={submit} ref={formRef}>
+        <FormRoot
+          className="flex flex-col gap-6"
+          onSubmit={submit}
+          ref={formRef}
+        >
           <DialogHeader>
             <DialogTitle>{labels.editApiKey}</DialogTitle>
           </DialogHeader>
@@ -198,7 +203,7 @@ export function EditApiKeyDialog({
               {localization.settings.saveChanges}
             </Button>
           </DialogFooter>
-        </form>
+        </FormRoot>
       </DialogContent>
     </Dialog>
   );

@@ -134,6 +134,7 @@ router.get(
         id: artifactTable.id,
         title: artifactTable.title,
         kind: artifactTable.kind,
+        version: artifactTable.version,
         userId: artifactTable.userId,
         createdAt: artifactTable.createdAt,
         updatedAt: artifactTable.updatedAt,
@@ -187,8 +188,8 @@ router.get(
         sender,
         messageId: sourceMessage?.id ?? null,
         createdAt: artifact.createdAt.toISOString(),
-        updatedAt:
-          artifact.updatedAt?.toISOString() ?? artifact.createdAt.toISOString(),
+        modifiedAt:
+          artifact.version > 1 ? artifact.updatedAt.toISOString() : null,
       };
     });
 
@@ -212,6 +213,13 @@ router.get(
         const key = `${url ?? name}:${mediaType}`;
         if (seen.has(key)) return [];
         seen.add(key);
+        const lastModified = numberValue(part.lastModified);
+        const fileModifiedDate =
+          lastModified && lastModified > 0 ? new Date(lastModified) : null;
+        const modifiedAt =
+          fileModifiedDate && Number.isFinite(fileModifiedDate.getTime())
+            ? fileModifiedDate.toISOString()
+            : null;
 
         return [
           {
@@ -225,7 +233,7 @@ router.get(
             sender,
             messageId: message.id,
             createdAt: message.createdAt.toISOString(),
-            updatedAt: message.createdAt.toISOString(),
+            modifiedAt,
           },
         ];
       });

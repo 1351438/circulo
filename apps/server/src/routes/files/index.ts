@@ -2,6 +2,7 @@ import { getSession } from "@/lib/auth";
 import { checkHybridAuth } from "@/lib/auth/hybrid";
 import type { AppEnv } from "@/lib/create-app";
 import { createRouter } from "@/lib/create-app";
+import { createLogger } from "@/lib/logs/console/logger";
 import { storageManager } from "@/lib/storage/config";
 import {
   createFileAccessToken,
@@ -9,6 +10,8 @@ import {
 } from "@/lib/storage/file-access-token";
 import { requireAuth } from "@/middleware/auth";
 import { createHonoFileRoutes } from "@circulo-ai/upload/hono";
+
+const uploadLogger = createLogger("FileUpload");
 
 const fileRoutes = createHonoFileRoutes<AppEnv>(
   {
@@ -20,6 +23,16 @@ const fileRoutes = createHonoFileRoutes<AppEnv>(
       )}?context=${encodeURIComponent(context)}&token=${encodeURIComponent(
         createFileAccessToken(key, context),
       )}`;
+    },
+    hooks: {
+      onError: (error, context) => {
+        uploadLogger.error("File upload route error", {
+          context,
+          error,
+          errorName: error.name,
+          platform: process.platform,
+        });
+      },
     },
   },
   {

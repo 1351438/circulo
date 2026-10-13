@@ -15,6 +15,7 @@ import {
   FieldLabel,
   FieldSeparator,
 } from "@/components/ui/field";
+import { FormRoot } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
   InputGroup,
@@ -79,11 +80,17 @@ export function SignInUsername({
   const { localization: usernameLocalization } = useAuthPlugin(usernamePlugin);
 
   const [password, setPassword] = useState("");
+  const [submitError, setSubmitError] = useState<string>();
 
   const { mutate: signInEmail, isPending: isSignInEmailPending } =
     useSignInEmail(authClient, {
       onError: (error, { email }) => {
         setPassword("");
+        setSubmitError(
+          error.error?.message ||
+            error.message ||
+            "Sign-in failed. Check your connection and try again.",
+        );
 
         if (error.error?.code === "EMAIL_NOT_VERIFIED") {
           sessionStorage.setItem("better-auth-ui.verify-email", email);
@@ -104,6 +111,11 @@ export function SignInUsername({
     useSignInUsername(authClient, {
       onError: (error) => {
         setPassword("");
+        setSubmitError(
+          error.error?.message ||
+            error.message ||
+            "Sign-in failed. Check your connection and try again.",
+        );
 
         if (error.error?.code === "EMAIL_NOT_VERIFIED") {
           sessionStorage.removeItem("better-auth-ui.verify-email");
@@ -143,6 +155,7 @@ export function SignInUsername({
 
   const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setSubmitError(undefined);
 
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
@@ -194,7 +207,7 @@ export function SignInUsername({
           )}
 
           {emailAndPassword?.enabled && (
-            <form onSubmit={handleSubmit}>
+            <FormRoot onSubmit={handleSubmit}>
               <FieldGroup>
                 <Field data-invalid={!!fieldErrors.email}>
                   <FieldLabel htmlFor="email">
@@ -330,6 +343,11 @@ export function SignInUsername({
                 )}
 
                 <div className="flex flex-col gap-3">
+                  {submitError && (
+                    <p role="alert" className="text-sm text-destructive">
+                      {submitError}
+                    </p>
+                  )}
                   <Button
                     type="submit"
                     className="relative overflow-visible"
@@ -352,7 +370,7 @@ export function SignInUsername({
                   )}
                 </div>
               </FieldGroup>
-            </form>
+            </FormRoot>
           )}
 
           {socialPosition === "bottom" && (

@@ -1,5 +1,6 @@
 "use client";
 
+import { FormRoot } from "@/components/ui/form";
 import { getViewURL } from "@better-auth-ui/core";
 import {
   useAuth,
@@ -218,7 +219,7 @@ function ChangePasswordForm({
         {localization.settings.changePassword}
       </h2>
 
-      <form onSubmit={handleSubmit}>
+      <FormRoot onSubmit={handleSubmit}>
         <Card className={cn(className)}>
           <CardContent className="flex flex-col gap-6">
             <Field data-invalid={!!fieldErrors.currentPassword}>
@@ -425,7 +426,7 @@ function ChangePasswordForm({
             </Button>
           </CardFooter>
         </Card>
-      </form>
+      </FormRoot>
     </div>
   );
 }

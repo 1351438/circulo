@@ -21,6 +21,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  Combobox,
+  ComboboxChip,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxValue,
+} from "@/components/ui/combobox";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -220,8 +231,10 @@ export function WorkspaceTools({
   const [scope, setScope] = useState<{
     type: Scope;
     targetId: string;
-    allowedTools: string;
-  }>({ type: "organization", targetId: "", allowedTools: "" });
+  }>({ type: "organization", targetId: "" });
+  const [allowedToolsByIntegration, setAllowedToolsByIntegration] = useState<
+    Record<string, string[]>
+  >({});
 
   useEffect(() => {
     const recipeId = searchParams.get("recipe");
@@ -384,13 +397,14 @@ export function WorkspaceTools({
           scope: scope.type,
           ...(scope.type === "chat" ? { chatId: scope.targetId } : {}),
           ...(scope.type === "agent" ? { agentId: scope.targetId } : {}),
-          allowedTools: scope.allowedTools
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean),
+          allowedTools: allowedToolsByIntegration[integrationId] ?? [],
         }),
       });
-      setScope({ type: "organization", targetId: "", allowedTools: "" });
+      setScope({ type: "organization", targetId: "" });
+      setAllowedToolsByIntegration((current) => ({
+        ...current,
+        [integrationId]: [],
+      }));
       await mutate();
       toast.success("Tool access scope added");
     } catch (error) {
@@ -769,16 +783,54 @@ export function WorkspaceTools({
                     </div>
                     <Field>
                       <FieldLabel>Allowed tools</FieldLabel>
-                      <Input
-                        value={scope.allowedTools}
-                        onChange={(event) =>
-                          setScope((current) => ({
+                      <Combobox
+                        items={[
+                          ...new Set(
+                            integration.tools
+                              .filter((tool) => tool.enabled)
+                              .map((tool) => tool.name),
+                          ),
+                        ]}
+                        multiple
+                        onValueChange={(value) =>
+                          setAllowedToolsByIntegration((current) => ({
                             ...current,
-                            allowedTools: event.target.value,
+                            [integration.id]: value,
                           }))
                         }
-                        placeholder="Optional, comma-separated tool names"
-                      />
+                        value={allowedToolsByIntegration[integration.id] ?? []}
+                      >
+                        <ComboboxChips aria-label="Allowed tools">
+                          <ComboboxValue>
+                            {(
+                              allowedToolsByIntegration[integration.id] ?? []
+                            ).map((toolName) => (
+                              <ComboboxChip key={toolName}>
+                                {toolName}
+                              </ComboboxChip>
+                            ))}
+                          </ComboboxValue>
+                          <ComboboxChipsInput
+                            placeholder={
+                              integration.tools.some((tool) => tool.enabled)
+                                ? "Search or select tools"
+                                : "No enabled tools available"
+                            }
+                          />
+                        </ComboboxChips>
+                        <ComboboxContent>
+                          <ComboboxEmpty>
+                            No enabled tools match your search.
+                          </ComboboxEmpty>
+                          <ComboboxList>
+                            {(toolName) => (
+                              <ComboboxItem key={toolName} value={toolName}>
+                                {toolName}
+                              </ComboboxItem>
+                            )}
+                          </ComboboxList>
+                        </ComboboxContent>
+                      </Combobox>
                       <FieldDescription>
                         Leave blank to allow all discovered tools in this scope.
                       </FieldDescription>
